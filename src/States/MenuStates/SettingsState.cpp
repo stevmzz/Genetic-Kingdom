@@ -144,8 +144,8 @@ void SettingsState::init() {
     );
 
     exitButton->setTextures(
-        "assets/images/boton_deselected.png",
-        "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     buttons.push_back(std::move(exitButton));

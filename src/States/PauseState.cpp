@@ -72,8 +72,8 @@ void PauseState::init() {
         }
     ));
     buttons[0]->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
 );
 
     // boton "continue"
@@ -87,8 +87,8 @@ void PauseState::init() {
         }
     ));
     buttons[1]->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
 );
 
     // seleccionar el primer boton por defecto

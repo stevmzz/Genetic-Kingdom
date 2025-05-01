@@ -112,8 +112,8 @@ void MenuState::init() {
         }
     );
     playButton->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     // boton settings
@@ -127,8 +127,8 @@ void MenuState::init() {
         }
     );
     settingsButton->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     // boton manual
@@ -142,8 +142,8 @@ void MenuState::init() {
         }
     );
     manualButton->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     // boton credits
@@ -157,8 +157,8 @@ void MenuState::init() {
         }
     );
     creditsButton->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     // boton exit
@@ -171,8 +171,8 @@ void MenuState::init() {
         }
     );
     exitButton->setTextures(
-    "assets/images/boton_deselected.png",
-    "assets/images/boton_selected.png"
+        "assets/images/buttons/boton_deselected.png",
+        "assets/images/buttons/boton_selected.png"
     );
 
     // agregar botones a la lista
