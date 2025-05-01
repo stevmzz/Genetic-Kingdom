@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.10)
+project(Genetic_Kingdom)
+
+set(CMAKE_CXX_STANDARD 17)
+
+# Encuentra los paquetes de SFML
+find_package(SFML 2.5 COMPONENTS graphics window system audio REQUIRED)
+
+# Incluye directorios
+include_directories(include)
+
+# Agrega los archivos fuente
+set(SOURCES
+        src/main.cpp
+        src/Core/Game.cpp
+        src/Core/AudioSystem.cpp
+        src/UI/Button.cpp
+        src/States/MenuStates/MenuState.cpp
+        src/States/GameplayState.cpp
+        src/States/PauseState.cpp
+        src/Effects/Particle.cpp
+        src/Effects/ParticleSystem.cpp
+        src/States/MenuStates/SettingsState.cpp
+        src/States/MenuStates/ManualState.cpp
+        src/States/MenuStates/CreditsState.cpp
+        src/UI/Slider.cpp
+        src/Game/Grid/Grid.cpp
+        src/Game/Grid/Cell.cpp
+)
+
+# Crea el ejecutable
+add_executable(Genetic_Kingdom ${SOURCES})
+
+# Enlaza las bibliotecas de SFML
+target_link_libraries(Genetic_Kingdom sfml-graphics sfml-window sfml-system sfml-audio)
+
+# Copia la carpeta assets al directorio donde está el ejecutable
+add_custom_command(TARGET Genetic_Kingdom POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:Genetic_Kingdom>/assets)
