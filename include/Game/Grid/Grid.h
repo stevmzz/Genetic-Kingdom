@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include "../include//Game/Grid/Cell.h"
+#include "../include/Game/Grid/Cell.h"
 
 class Grid {
 public:
@@ -10,6 +10,12 @@ public:
     void draw(sf::RenderWindow& window);
     Cell* getCellAtPosition(float x, float y);
     void clearSelection();
+    Cell* getCellAt(int row, int col);
+    float getX() const { return x; }
+    float getY() const { return y; }
+    int getRows() const { return rows; }
+    int getCols() const { return cols; }
+    float getCellSize() const { return cellSize; }
 
 private:
     std::vector<std::vector<Cell>> cells;

@@ -9,10 +9,13 @@ public:
     bool contains(float x, float y) const;
     void setSelected(bool selected);
     void setTexture(const sf::Texture* texture);
+    void setIsPath(bool isPath);
+    bool isPathCell() const;
     sf::Vector2f getPosition() const;
     float getSize() const;
 
 private:
     sf::RectangleShape shape;
     bool selected;
+    bool pathCell;
 };

@@ -5,16 +5,22 @@
 #include "GameState.h"
 #include <memory>
 #include "../include/Game/Grid/Grid.h"
+#include "../include/Game/Enemies/Enemy.h"
+#include "../include/Game/Systems/WaveManager.h"
 
 class GameplayState : public GameState {
 private:
     sf::Text gameplayText;
     std::unique_ptr<Grid> gameGrid;
-    const int GRID_ROWS = 10;
+    const int GRID_ROWS = 11;
     const int GRID_COLS = 20;
     const float CELL_SIZE = 70.0f;
     sf::Texture backgroundTexture;
     sf::Sprite backgroundSprite;
+    std::vector<sf::Vector2f> testPath;
+    std::vector<std::unique_ptr<Enemy>> enemies;
+    std::unique_ptr<WaveManager> waveManager;
+    sf::Text waveInfoText;
 
 public:
     GameplayState();
@@ -25,6 +31,8 @@ public:
     void update(float dt) override;
     void render(sf::RenderWindow& window) override;
     void cleanup() override;
+    void createTestPath();
+    void updateWaveInfoText();
 };
 
 #endif // GAMEPLAYSTATE_H

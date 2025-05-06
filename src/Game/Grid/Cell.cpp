@@ -1,7 +1,7 @@
 #include "../include/Game/Grid/Cell.h"
 
 // constructor de la celda
-Cell::Cell(float x, float y, float size) : selected(false) {
+Cell::Cell(float x, float y, float size) : selected(false), pathCell(false) {
     // configurar la forma rectangular de la celda
     shape.setPosition(x, y);
     shape.setSize(sf::Vector2f(size, size));
@@ -52,6 +52,20 @@ void Cell::setTexture(const sf::Texture* texture) {
         shape.setTexture(nullptr);
         shape.setFillColor(sf::Color::Transparent);
     }
+}
+
+
+
+// establece si la celda forma parte del camino
+void Cell::setIsPath(bool isPath) {
+    pathCell = isPath;
+}
+
+
+
+// Verifica si la celda forma parte del camino
+bool Cell::isPathCell() const {
+    return pathCell;
 }
 
 
