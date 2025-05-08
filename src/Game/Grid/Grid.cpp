@@ -51,3 +51,13 @@ void Grid::clearSelection() {
         }
     }
 }
+
+
+
+// obtiene la celda en la posición de fila/columna especificada
+Cell* Grid::getCellAt(int row, int col) {
+    if (row >= 0 && row < rows && col >= 0 && col < cols) {
+        return &cells[row][col];
+    }
+    return nullptr;
+}

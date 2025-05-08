@@ -26,6 +26,10 @@ set(SOURCES
         src/UI/Slider.cpp
         src/Game/Grid/Grid.cpp
         src/Game/Grid/Cell.cpp
+        src/Game/Enemies/Enemy.cpp
+        src/Game/Enemies/Ogre.cpp
+        src/Game/Systems/WaveManager.cpp
+        src/Game/Systems/Pathfinding.cpp
 )
 
 # Crea el ejecutable
