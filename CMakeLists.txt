@@ -30,6 +30,8 @@ set(SOURCES
         src/Game/Enemies/Ogre.cpp
         src/Game/Systems/WaveManager.cpp
         src/Game/Systems/Pathfinding.cpp
+        src/Game/Genetics/Chromosome.cpp
+        src/Game/Genetics/Genetics.cpp
 )
 
 # Crea el ejecutable
