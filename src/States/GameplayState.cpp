@@ -36,12 +36,7 @@ void GameplayState::init() {
     createTestPath();
 
     // inicializar el gestor de oleadas
-    waveManager = std::make_unique<WaveManager>(
-        testPath,
-        1,
-        1.0f,
-        1.5f
-    );
+    waveManager = std::make_unique<WaveManager>(testPath, 1.5f);
 }
 
 

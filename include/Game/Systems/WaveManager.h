@@ -2,29 +2,39 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 #include <SFML/System/Clock.hpp>
 #include <SFML/System/Vector2.hpp>
 #include "../Enemies/Enemy.h"
+#include "../Genetics/Chromosome.h"
 
 class WaveManager {
 private:
     int currentWave;
     std::vector<sf::Vector2f> enemyPath;
     sf::Vector2f spawnPosition;
-    sf::Clock waveTimer;
-    sf::Clock enemySpawnTimer;
-    int enemiesPerWave;
-    float waveInterval;
     float enemySpawnInterval;
     bool waveInProgress;
     int enemiesSpawned;
     int enemiesRemaining;
+    int enemiesPerWave;
+    std::vector<Chromosome> currentWaveChromosomes;
+
+    struct EnemyPerformance {
+        bool reachedEnd;
+        float distanceTraveled;
+        float timeAlive;
+        int chromosomeIndex;
+    };
+
+    std::map<int, EnemyPerformance> enemyPerformanceData;
+    float pathTotalLength;
+    float lastWaveMaxProgress;
+    float lastWaveAvgProgress;
+    sf::Clock enemySpawnTimer;
 
 public:
-    WaveManager(const std::vector<sf::Vector2f>& path,
-                int enemiesPerWave = 3,
-                float waveInterval = 10.0f,
-                float enemySpawnInterval = 1.5f);
+    WaveManager(const std::vector<sf::Vector2f>& path, float enemySpawnInterval = 1.5f);
 
     std::vector<std::unique_ptr<Enemy>> update(float dt);
     int getCurrentWave() const;
@@ -32,4 +42,17 @@ public:
     bool isWaveInProgress() const;
     void startNextWave();
     void reset();
+    void setWaveChromosomes(const std::vector<Chromosome>& chromosomes);
+    void trackEnemyPerformance(int enemyId, bool reachedEnd, float distanceTraveled, float timeAlive);
+    std::vector<bool> getEnemiesReachedEnd() const;
+    std::vector<float> getDistancesTraveled() const;
+    std::vector<float> getTimesAlive() const;
+    bool isWaveComplete() const;
+    int getEnemiesSpawned() const { return enemiesSpawned; }
+    int getEnemiesPerWave() const { return enemiesPerWave; }
+    void calculateNextWaveEnemyCount();
+    void setPathTotalLength(float length);
+    float getMaxProgressLastWave() const { return lastWaveMaxProgress; }
+    float getAvgProgressLastWave() const { return lastWaveAvgProgress; }
+    void calculatePathLength();
 };
