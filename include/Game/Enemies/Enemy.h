@@ -3,9 +3,11 @@
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <vector>
+#include "../Genetics/Chromosome.h"
 
 class Enemy : public sf::Drawable {
 protected:
+    int id;
     float health;
     float maxHealth;
     float speed;
@@ -20,13 +22,26 @@ protected:
     bool isActive;
     std::vector<sf::Vector2f> path;
     size_t currentPathIndex;
+    float totalDistanceTraveled;
+    sf::Clock lifeTimer;
 
 public:
-    Enemy(float health, float speed,
-          float arrowRes, float magicRes, float artilleryRes,
-          int goldReward,
-          const sf::Vector2f& position,
-          const std::vector<sf::Vector2f>& path);
+    Enemy(
+        float health,
+        float speed,
+        float arrowRes,
+        float magicRes,
+        float artilleryRes,
+        int goldReward,
+        const sf::Vector2f& position,
+        const std::vector<sf::Vector2f>& path);
+
+    Enemy(
+        const Chromosome& chromosome,
+        int goldReward,
+        const sf::Vector2f& position,
+        const std::vector<sf::Vector2f>& path);
+
     virtual ~Enemy() = default;
 
     virtual void update(float dt) = 0;
@@ -39,4 +54,8 @@ public:
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     void setPath(const std::vector<sf::Vector2f>& newPath);
     bool loadTexture(const std::string& filename);
+    void setId(int id);
+    int getId() const;
+    float getTotalDistanceTraveled() const;
+    float getTimeAlive() const;
 };

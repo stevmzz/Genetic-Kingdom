@@ -64,7 +64,7 @@ std::vector<Chromosome> Genetics::selectParents() {
 
     // seleccion por ruleta
     std::uniform_real_distribution<float> dist(0.0f, totalFitness);
-    for (int i = 0; i < populationSize(); ++i) {
+    for (int i = 0; i < populationSize; ++i) {
         float spinValue = dist(randomGenerator);
         float currentSum = 0.0f;
 

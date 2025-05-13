@@ -3,19 +3,53 @@
 #include <cmath>
 
 // constructor del enemigo
-Enemy::Enemy(float health, float speed,
-             float arrowRes, float magicRes, float artilleryRes,
-             int goldReward,
-             const sf::Vector2f& position,
-             const std::vector<sf::Vector2f>& path)
-    : health(health), maxHealth(health), speed(speed),
-      arrowResistance(arrowRes), magicResistance(magicRes), artilleryResistance(artilleryRes),
-      goldReward(goldReward), position(position), isActive(true), path(path), currentPathIndex(0) {
+Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+    :   id(-1),
+        health(health),
+        maxHealth(health),
+        speed(speed),
+        arrowResistance(arrowRes),
+        magicResistance(magicRes),
+        artilleryResistance(artilleryRes),
+        goldReward(goldReward),
+        position(position),
+        isActive(true),
+        path(path),
+        currentPathIndex(0),
+        totalDistanceTraveled(0.0f) {
 
     // inicializar direccion si hay un camino
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex + 1]);
     }
+
+    // iniciar el temporizador de vida
+    lifeTimer.restart();
+}
+
+
+
+// contructor badado en cromosoma
+Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+    :   id(-1),
+        health(chromosome.getHealth()),
+        maxHealth(chromosome.getHealth()),
+        speed(chromosome.getSpeed()),
+        arrowResistance(chromosome.getArrowResistance()),
+        magicResistance(chromosome.getMagicResistance()),
+        artilleryResistance(chromosome.getArtilleryResistance()),
+        goldReward(goldReward),
+        position(position),
+        isActive(true),
+        path(path),
+        currentPathIndex(0),
+        totalDistanceTraveled(0.0f) {
+
+    if (!path.empty() && currentPathIndex < path.size() - 1) {
+        direction = Pathfinding::getDirection(position, path[currentPathIndex + 1]);
+    }
+
+    lifeTimer.restart();
 }
 
 
@@ -91,4 +125,32 @@ void Enemy::setPath(const std::vector<sf::Vector2f>& newPath) {
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex]);
     }
+}
+
+
+
+// establecer id
+void Enemy::setId(int id) {
+    this->id = id;
+}
+
+
+
+// obtener id
+int Enemy::getId() const {
+    return id;
+}
+
+
+
+// obtener la distancia total recorrida
+float Enemy::getTotalDistanceTraveled() const {
+    return totalDistanceTraveled;
+}
+
+
+
+// obtener el tiempo vivo
+float Enemy::getTimeAlive() const {
+    return lifeTimer.getElapsedTime().asSeconds();
 }
