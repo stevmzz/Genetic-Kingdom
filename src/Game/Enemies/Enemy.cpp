@@ -109,7 +109,7 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         sf::RectangleShape healthBar;
         healthBar.setSize(sf::Vector2f(40.f * (health / maxHealth), 5.f));
         healthBar.setFillColor(sf::Color::Green);
-        healthBar.setPosition(position.x - 20.f, position.y - 65.f);
+        healthBar.setPosition(position.x - 20.f, position.y - 40.f);
         target.draw(healthBar, states);
     }
 }

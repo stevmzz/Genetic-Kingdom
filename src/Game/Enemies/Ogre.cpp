@@ -22,7 +22,7 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
     }
 
     // ajustar el tamano del sprite del ogro
-    sprite.setScale(0.5f, 0.5f); // reducir a la mitad del tamano original
+    sprite.setScale(0.3f, 0.3f); // reducir al 30% del tamano original
 
     // no girar el sprite inicialmente
     sprite.setRotation(0.0f);
@@ -52,11 +52,11 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, 
 
     // cargar la textura del ogro
     if (!loadTexture("assets/images/enemies/ogre.png")) {
-        std::cerr << "Error al cargar imagen: ogro" << std::endl;
+        std::cerr << "error al cargar imagen: ogro" << std::endl;
     }
 
     // ajustar el tamaño del sprite del ogro
-    sprite.setScale(0.5f, 0.5f);
+    sprite.setScale(0.3f, 0.3f);
     sprite.setRotation(0.0f);
 }
 
