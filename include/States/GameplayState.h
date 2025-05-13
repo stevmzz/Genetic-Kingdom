@@ -7,6 +7,7 @@
 #include "../include/Game/Grid/Grid.h"
 #include "../include/Game/Enemies/Enemy.h"
 #include "../include/Game/Systems/WaveManager.h"
+#include "../include/Game/Genetics/Genetics.h"
 
 class GameplayState : public GameState {
 private:
@@ -20,7 +21,9 @@ private:
     std::vector<sf::Vector2f> testPath;
     std::vector<std::unique_ptr<Enemy>> enemies;
     std::unique_ptr<WaveManager> waveManager;
-    sf::Text waveInfoText;
+    std::unique_ptr<Genetics> geneticsSystem;
+    int enemiesKilled;
+    bool gameOver;
 
 public:
     GameplayState();
@@ -32,7 +35,7 @@ public:
     void render(sf::RenderWindow& window) override;
     void cleanup() override;
     void createTestPath();
-    void updateWaveInfoText();
+    void prepareNextGeneration();
 };
 
 #endif // GAMEPLAYSTATE_H
