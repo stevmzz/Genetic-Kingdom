@@ -4,6 +4,8 @@
 #include <SFML/Graphics.hpp>
 #include "GameState.h"
 #include <memory>
+#include <UI/Button.h>
+
 #include "../include/Game/Grid/Grid.h"
 #include "../include/Game/Enemies/Enemy.h"
 #include "../include/Game/Systems/WaveManager.h"
@@ -24,6 +26,9 @@ private:
     std::unique_ptr<Genetics> geneticsSystem;
     int enemiesKilled;
     bool gameOver;
+    std::vector<std::shared_ptr<Button>> towerButtons;
+    Cell* selectedCellForPlacement = nullptr; // celda en la que se mostraron los botones
+    bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
 
 public:
     GameplayState();
@@ -36,6 +41,15 @@ public:
     void cleanup() override;
     void createTestPath();
     void prepareNextGeneration();
+    void handleTowerAttacks();
+
+    enum class TowerType {
+        Archer,
+        Mage,
+        Gunner
+    };
+
+    TowerType selectedTowerType;
 };
 
 #endif // GAMEPLAYSTATE_H

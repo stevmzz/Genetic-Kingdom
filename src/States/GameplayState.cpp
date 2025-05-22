@@ -5,11 +5,15 @@
 #include <sstream>
 #include <cmath>
 #include <States/MenuStates/MenuState.h>
+#include "Game/Towers/Archer.h"
+#include "Game/Towers/Mage.h"
+#include "Game/Towers/Gunner.h"
 
 // constructor del estado de juego
 GameplayState::GameplayState()
     :   enemiesKilled(0),
-        gameOver(false) {
+        gameOver(false),
+        selectedTowerType(TowerType::Archer){
 }
 
 
@@ -123,6 +127,28 @@ void GameplayState::handleEvents(sf::Event& event) {
         return;
     }
 
+    // primero, si hay botones activos, revisar si se hizo clic en ellos
+    for (auto& button : towerButtons) {
+        if (button->handleEvent(event)) {
+            return; // solo salir si realmente se hizo clic en un botón
+        }
+    }
+
+    // cancelar selección si se hace clic fuera de botones y celda activa
+    if (event.type == sf::Event::MouseButtonPressed &&
+        event.mouseButton.button == sf::Mouse::Left &&
+        selectedCellForPlacement) {
+
+        sf::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
+                              static_cast<float>(event.mouseButton.y));
+
+        if (clickedOutsideButtonsAndSelectedCell(mousePos)) {
+            selectedCellForPlacement = nullptr;
+            towerButtons.clear();
+            return;
+        }
+        }
+
     if (event.type == sf::Event::KeyPressed) {
         // si se presiona la tecla escape se cambia al estado de pausa
         if (event.key.code == sf::Keyboard::Escape) {
@@ -140,16 +166,95 @@ void GameplayState::handleEvents(sf::Event& event) {
         float mouseX = static_cast<float>(event.mouseMove.x);
         float mouseY = static_cast<float>(event.mouseMove.y);
 
-        // deseleccionar todas las celdas
         gameGrid->clearSelection();
 
-        // encontrar la celda bajo el mouse
-        Cell* hoveredCell = gameGrid->getCellAtPosition(mouseX, mouseY);
-        if (hoveredCell) {
-            hoveredCell->setSelected(true);
+        // Evitar que brillen las celdas si hay botones activos
+        if (towerButtons.empty()) {
+            Cell* hoveredCell = gameGrid->getCellAtPosition(mouseX, mouseY);
+            if (hoveredCell) {
+                hoveredCell->setSelected(true);
+            }
+        }
+    }
+
+    // si ya hay una celda esperando colocación, no permitir seleccionar otra
+    if (selectedCellForPlacement && !towerButtons.empty()) {
+        return;
+    }
+
+    // clic izquierdo: mostrar botones de torre si la celda es válida
+    if (event.type == sf::Event::MouseButtonPressed &&
+        event.mouseButton.button == sf::Mouse::Left &&
+        gameGrid) {
+
+        float mouseX = static_cast<float>(event.mouseButton.x);
+        float mouseY = static_cast<float>(event.mouseButton.y);
+
+        Cell* clickedCell = gameGrid->getCellAtPosition(mouseX, mouseY);
+        if (clickedCell && !clickedCell->isPathCell() && !clickedCell->hasTower()) {
+            selectedCellForPlacement = clickedCell;
+            towerButtons.clear();
+
+            sf::Vector2f basePos = clickedCell->getPosition();
+            float offsetY = -50.0f;
+            sf::Vector2f size(80.f, 40.f);
+
+            // Botón Archer
+            auto btnArcher = std::make_shared<Button>(
+                (basePos.x- 25.0f) - 140.f, basePos.y + offsetY,
+                125.f, 75.f,
+                game->getFont(),
+                "Archer",
+                [this]() {
+                    if (selectedCellForPlacement) {
+                        std::cout << "Archer button pressed\n";
+                        selectedCellForPlacement->placeTower(std::make_shared<Archer>());
+                        selectedCellForPlacement = nullptr;
+                        towerButtons.clear();
+                    }
+                }
+            );
+
+            // Botón Mage
+            auto btnMage = std::make_shared<Button>(
+                (basePos.x- 25.0f), basePos.y + offsetY,
+                125.f, 75.f,
+                game->getFont(),
+                "Mage",
+                [this]() {
+                    if (selectedCellForPlacement) {
+                        std::cout << "Mage button pressed\n";
+                        selectedCellForPlacement->placeTower(std::make_shared<Mage>());
+                        selectedCellForPlacement = nullptr;
+                        towerButtons.clear();
+                    }
+                }
+            );
+
+            // Botón Gunner
+            auto btnGunner = std::make_shared<Button>(
+                (basePos.x- 25.0f) + 140.f, basePos.y + offsetY,
+                125.f, 75.f,
+                game->getFont(),
+                "Gunner",
+                [this]() {
+                    if (selectedCellForPlacement) {
+                        std::cout << "Gunner button pressed\n";
+                        selectedCellForPlacement->placeTower(std::make_shared<Gunner>());
+                        selectedCellForPlacement = nullptr;
+                        towerButtons.clear();
+                    }
+                }
+            );
+
+
+            towerButtons.push_back(btnArcher);
+            towerButtons.push_back(btnMage);
+            towerButtons.push_back(btnGunner);
         }
     }
 }
+
 
 
 
@@ -197,6 +302,9 @@ void GameplayState::update(float dt) {
             ++it;
         }
     }
+
+    // Hace que las torres ataquen los enemigos
+    handleTowerAttacks();
 
     // si el juego no ha terminado, comprobar si la oleada ha terminado
     if (!gameOver) {
@@ -251,6 +359,11 @@ void GameplayState::render(sf::RenderWindow& window) {
         window.draw(*enemy);
     }
 
+    // dibujar botones de opciones de torres al hacer click en celda
+    for (const auto& button : towerButtons) {
+        button->draw(window);
+    }
+
     // si el juego ha terminado, mostrar mensaje de Game Over
     if (gameOver) {
         auto& font = game->getFont();
@@ -292,4 +405,54 @@ void GameplayState::cleanup() {
     enemies.clear();
     waveManager.reset();
     geneticsSystem.reset();
+}
+
+void GameplayState::handleTowerAttacks() {
+    const auto& cellGrid = gameGrid->getCells(); // get 2D vector of cells
+
+    for (const auto& row : cellGrid) {
+        for (const auto& cell : row) {
+            if (cell.hasTower()) {
+                auto tower = cell.getTower();
+
+                for (const auto& enemyPtr : enemies) {
+                    if (enemyPtr->isAlive()) {
+                        float dx = enemyPtr->getPosition().x - cell.getPosition().x;
+                        float dy = enemyPtr->getPosition().y - cell.getPosition().y;
+                        float distance = std::hypot(dx, dy);
+
+                        if (distance <= tower->getRange()) {
+                            tower->attack(*enemyPtr);
+                            break; // only one attack per cycle
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool GameplayState::clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const {
+    if (!selectedCellForPlacement) return false;
+
+    // Verificar si se hizo clic dentro de algún botón
+    for (const auto& button : towerButtons) {
+        if (button->getBounds().contains(mousePos)) {
+            return false;
+        }
+    }
+
+    // Verificar si se hizo clic dentro de la celda seleccionada
+    float cellSize = gameGrid->getCellSize();
+    sf::FloatRect selectedCellBounds(
+        selectedCellForPlacement->getPosition().x - cellSize / 2.f,
+        selectedCellForPlacement->getPosition().y - cellSize / 2.f,
+        cellSize, cellSize
+    );
+
+    if (selectedCellBounds.contains(mousePos)) {
+        return false;
+    }
+
+    return true; // el clic fue fuera de todo
 }

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <memory>
+#include "Game/Towers/Tower.h"
 
 class Cell {
 public:
@@ -13,9 +15,13 @@ public:
     bool isPathCell() const;
     sf::Vector2f getPosition() const;
     float getSize() const;
+    void placeTower(std::shared_ptr<Tower> t);
+    std::shared_ptr<Tower> getTower() const;
+    bool hasTower() const;
 
 private:
     sf::RectangleShape shape;
     bool selected;
     bool pathCell;
+    std::shared_ptr<Tower> tower;
 };

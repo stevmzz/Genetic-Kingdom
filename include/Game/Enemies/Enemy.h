@@ -58,4 +58,5 @@ public:
     int getId() const;
     float getTotalDistanceTraveled() const;
     float getTimeAlive() const;
+    void receiveDamage(float damage);
 };

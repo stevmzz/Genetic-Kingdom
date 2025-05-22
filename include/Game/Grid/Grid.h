@@ -16,6 +16,7 @@ public:
     int getRows() const { return rows; }
     int getCols() const { return cols; }
     float getCellSize() const { return cellSize; }
+    const std::vector<std::vector<Cell>>& getCells() const { return cells; }
 
 private:
     std::vector<std::vector<Cell>> cells;
