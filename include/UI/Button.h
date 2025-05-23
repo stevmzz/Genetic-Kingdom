@@ -15,6 +15,7 @@ private:
 
     bool useTexture;
     bool isSelected;
+    bool hovered = false;
 
 public:
     Button(float x, float y, float width, float height,
@@ -27,6 +28,9 @@ public:
     void draw(sf::RenderWindow& window);
     void setText(const std::string& text);
     void setTextures(const std::string& normalTexture, const std::string& selectedTexture);
+    void setCallback(std::function<void()> callback);
+    bool handleEvent(const sf::Event& event);
+    sf::FloatRect getBounds() const;
 };
 
 #endif // BUTTON_H

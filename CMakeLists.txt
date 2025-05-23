@@ -32,6 +32,13 @@ set(SOURCES
         src/Game/Systems/Pathfinding.cpp
         src/Game/Genetics/Chromosome.cpp
         src/Game/Genetics/Genetics.cpp
+        include/Game/Towers/Tower.h
+        include/Game/Towers/Mage.h
+        include/Game/Towers/Archer.h
+        include/Game/Towers/Gunner.h
+        src/Game/Towers/Archer.cpp
+        src/Game/Towers/Gunner.cpp
+        src/Game/Towers/Mage.cpp
 )
 
 # Crea el ejecutable

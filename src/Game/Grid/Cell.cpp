@@ -1,4 +1,5 @@
 #include "../include/Game/Grid/Cell.h"
+#include "Game/Towers/Tower.h"
 
 // constructor de la celda
 Cell::Cell(float x, float y, float size) : selected(false), pathCell(false) {
@@ -15,6 +16,15 @@ Cell::Cell(float x, float y, float size) : selected(false), pathCell(false) {
 // dibuja la celda en la ventana
 void Cell::draw(sf::RenderWindow& window) {
     window.draw(shape);
+    if (tower) {
+        // Compute the center of the cell
+        sf::Vector2f center = shape.getPosition();
+        center.x += shape.getSize().x / 2.f;
+        center.y += shape.getSize().y / 2.f;
+
+        tower->setPosition(center); // Now you're placing the sprite correctly
+        window.draw(tower->getSprite());
+    }
 }
 
 
@@ -81,3 +91,19 @@ sf::Vector2f Cell::getPosition() const {
 float Cell::getSize() const {
     return shape.getSize().x;
 }
+
+// colocar una torre en la celda
+void Cell::placeTower(std::shared_ptr<Tower> t) {
+    tower = t;
+}
+
+// obtener la torre colocada
+std::shared_ptr<Tower> Cell::getTower() const {
+    return tower;
+}
+
+// verificar si la celda tiene una torre
+bool Cell::hasTower() const {
+    return tower != nullptr;
+}
+

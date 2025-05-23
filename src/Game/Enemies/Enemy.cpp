@@ -154,3 +154,15 @@ float Enemy::getTotalDistanceTraveled() const {
 float Enemy::getTimeAlive() const {
     return lifeTimer.getElapsedTime().asSeconds();
 }
+
+// aplicar daño al enemigo
+void Enemy::receiveDamage(float damage) {
+    // reducir salud
+    health -= damage;
+
+    // si la salud cae por debajo de 0, marcar como inactivo
+    if (health <= 0.f) {
+        health = 0.f;
+        isActive = false;
+    }
+}

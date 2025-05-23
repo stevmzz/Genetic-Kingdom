@@ -76,6 +76,12 @@ void Button::draw(sf::RenderWindow& window) {
         }
     }
 
+    if (hovered) {
+        shape.setFillColor(sf::Color(150, 150, 250)); // azul brillante
+    } else {
+        shape.setFillColor(sf::Color(100, 100, 100)); // gris normal
+    }
+
     window.draw(shape);
     window.draw(text);
 }
@@ -95,4 +101,36 @@ void Button::setText(const std::string& text) {
         buttonPos.x + (buttonSize.x - textRect.width) / 2,
         buttonPos.y + (buttonSize.y - textRect.height) / 2 - textRect.top
     );
+}
+
+void Button::setCallback(std::function<void()> cb) {
+    callback = std::move(cb);
+}
+
+bool Button::handleEvent(const sf::Event& event) {
+    if (event.type == sf::Event::MouseMoved) {
+        sf::Vector2f mousePos(static_cast<float>(event.mouseMove.x),
+                              static_cast<float>(event.mouseMove.y));
+
+        hovered = shape.getGlobalBounds().contains(mousePos);
+    }
+
+    if (event.type == sf::Event::MouseButtonPressed &&
+        event.mouseButton.button == sf::Mouse::Left) {
+
+        sf::Vector2f mousePos(static_cast<float>(event.mouseButton.x),
+                              static_cast<float>(event.mouseButton.y));
+
+        if (shape.getGlobalBounds().contains(mousePos)) {
+            if (callback) {
+                callback();
+            }
+            return true;  // clic válido dentro del botón
+        }
+        }
+    return false;
+}
+
+sf::FloatRect Button::getBounds() const {
+    return shape.getGlobalBounds();
 }
