@@ -43,6 +43,19 @@ void GameplayState::init() {
     // crear un camino de prueba para los enemigos
     createTestPath();
 
+    // texto que avisa al jugador si no tiene suficiente dinero
+    // siempre esta ahi, solo se muestra cuando es necesario
+    insufficientGoldText.setFont(game->getFont());
+    insufficientGoldText.setCharacterSize(20);
+    insufficientGoldText.setFillColor(sf::Color::Red);
+    insufficientGoldText.setString("Not enough gold!");
+    sf::FloatRect textBounds = insufficientGoldText.getLocalBounds();
+    insufficientGoldText.setPosition(
+        (game->getWindow().getSize().x - textBounds.width) / 2.f,
+        game->getWindow().getSize().y - textBounds.height - 20.f
+    );
+
+
     // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
     geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
 
@@ -145,6 +158,7 @@ void GameplayState::handleEvents(sf::Event& event) {
         if (clickedOutsideButtonsAndSelectedCell(mousePos)) {
             selectedCellForPlacement = nullptr;
             towerButtons.clear();
+            towerPriceTexts.clear();
             return;
         }
         }
@@ -194,6 +208,7 @@ void GameplayState::handleEvents(sf::Event& event) {
         if (clickedCell && !clickedCell->isPathCell() && !clickedCell->hasTower()) {
             selectedCellForPlacement = clickedCell;
             towerButtons.clear();
+            towerPriceTexts.clear();
 
             sf::Vector2f basePos = clickedCell->getPosition();
             float offsetY = -50.0f;
@@ -207,13 +222,28 @@ void GameplayState::handleEvents(sf::Event& event) {
                 "Archer",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        std::cout << "Archer button pressed\n";
-                        selectedCellForPlacement->placeTower(std::make_shared<Archer>());
+                        auto tower = std::make_shared<Archer>();
+                        if (playerGold >= tower->getCost()) {
+                            selectedCellForPlacement->placeTower(tower);
+                            playerGold -= tower->getCost();
+                        } else {
+                            showGoldWarning = true;
+                            goldWarningClock.restart();
+                        }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
+                        towerPriceTexts.clear();
                     }
                 }
             );
+            auto priceTextArcher = std::make_shared<sf::Text>();
+            priceTextArcher->setFont(game->getFont());
+            priceTextArcher->setCharacterSize(16);
+            priceTextArcher->setFillColor(sf::Color::Yellow);
+            Archer tempArcher;
+            priceTextArcher->setString(std::to_string(tempArcher.getCost()) + "g");
+            priceTextArcher->setPosition(btnArcher->getPosition().x + 40.f, btnArcher->getPosition().y + 80.f);
+            towerPriceTexts.push_back(priceTextArcher);
 
             // Botón Mage
             auto btnMage = std::make_shared<Button>(
@@ -223,13 +253,29 @@ void GameplayState::handleEvents(sf::Event& event) {
                 "Mage",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        std::cout << "Mage button pressed\n";
-                        selectedCellForPlacement->placeTower(std::make_shared<Mage>());
+                        auto tower = std::make_shared<Mage>();
+                        if (playerGold >= tower->getCost()) {
+                            selectedCellForPlacement->placeTower(tower);
+                            playerGold -= tower->getCost();
+                        } else {
+                            showGoldWarning = true;
+                            goldWarningClock.restart();
+                        }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
+                        towerPriceTexts.clear();
                     }
                 }
             );
+
+            auto priceTextMage = std::make_shared<sf::Text>();
+            priceTextMage->setFont(game->getFont());
+            priceTextMage->setCharacterSize(16);
+            priceTextMage->setFillColor(sf::Color::Yellow);
+            Mage tempMage;
+            priceTextMage->setString(std::to_string(tempMage.getCost()) + "g");
+            priceTextMage->setPosition(btnMage->getPosition().x + 30.f, btnMage->getPosition().y + 80.f);
+            towerPriceTexts.push_back(priceTextMage);
 
             // Botón Gunner
             auto btnGunner = std::make_shared<Button>(
@@ -239,13 +285,29 @@ void GameplayState::handleEvents(sf::Event& event) {
                 "Gunner",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        std::cout << "Gunner button pressed\n";
-                        selectedCellForPlacement->placeTower(std::make_shared<Gunner>());
+                        auto tower = std::make_shared<Gunner>();
+                        if (playerGold >= tower->getCost()) {
+                            selectedCellForPlacement->placeTower(tower);
+                            playerGold -= tower->getCost();
+                        } else {
+                            showGoldWarning = true;
+                            goldWarningClock.restart();
+                        }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
+                        towerPriceTexts.clear();
                     }
                 }
             );
+
+            auto priceTextGunner = std::make_shared<sf::Text>();
+            priceTextGunner->setFont(game->getFont());
+            priceTextGunner->setCharacterSize(16);
+            priceTextGunner->setFillColor(sf::Color::Yellow);
+            Gunner tempGunner;
+            priceTextGunner->setString(std::to_string(tempGunner.getCost()) + "g");
+            priceTextGunner->setPosition(btnGunner->getPosition().x + 30.f, btnGunner->getPosition().y + 80.f);
+            towerPriceTexts.push_back(priceTextGunner);
 
 
             towerButtons.push_back(btnArcher);
@@ -285,6 +347,9 @@ void GameplayState::update(float dt) {
 
             // registrar su rendimiento
             waveManager->trackEnemyPerformance(id, false, distanceTraveled, timeAlive);
+
+            playerGold += (*it)->getGoldReward(); // ganar oro al matar
+            std::cout << "Gold + " << (*it)->getGoldReward() << " (Total: " << playerGold << ")\n";
 
             // incrementar contador de enemigos eliminados
             enemiesKilled++;
@@ -364,6 +429,11 @@ void GameplayState::render(sf::RenderWindow& window) {
         button->draw(window);
     }
 
+    // agregar los textos de los precios de las torres
+    for (const auto& text : towerPriceTexts) {
+        window.draw(*text);
+    }
+
     // si el juego ha terminado, mostrar mensaje de Game Over
     if (gameOver) {
         auto& font = game->getFont();
@@ -397,6 +467,33 @@ void GameplayState::render(sf::RenderWindow& window) {
         window.draw(gameOverText);
         window.draw(instructionText);
     }
+
+    // flashing text cuando el jugador no tiene suficiente oro
+    if (showGoldWarning) {
+        float t = goldWarningClock.getElapsedTime().asSeconds();
+
+        // mostrar solo durante 2 segundos
+        if (t < 2.0f) {
+            // efecto de parpadeo
+            if (static_cast<int>(t * 5) % 2 == 0) {
+                window.draw(insufficientGoldText);
+            }
+        } else {
+            showGoldWarning = false;
+        }
+    }
+
+    // Muestra el oro en pantalla
+    sf::Text goldText;
+    goldText.setFont(game->getFont());
+    goldText.setCharacterSize(20);
+    goldText.setFillColor(sf::Color::Yellow);
+
+    goldText.setString("Gold: " + std::to_string(playerGold));
+    goldText.setPosition(20.f, 20.f); // esquina superior izquierda
+
+    window.draw(goldText);
+
 }
 
 // libera recursos si es necesario cuando se sale del estado
@@ -422,7 +519,7 @@ void GameplayState::handleTowerAttacks() {
                         float distance = std::hypot(dx, dy);
 
                         if (distance <= tower->getRange()) {
-                            tower->attack(*enemyPtr);
+                            tower->attack(*enemyPtr, enemies);
                             break; // only one attack per cycle
                         }
                     }

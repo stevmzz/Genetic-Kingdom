@@ -31,6 +31,7 @@ public:
     void setCallback(std::function<void()> callback);
     bool handleEvent(const sf::Event& event);
     sf::FloatRect getBounds() const;
+    sf::Vector2f getPosition() const {return shape.getPosition();}
 };
 
 #endif // BUTTON_H

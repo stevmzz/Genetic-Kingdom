@@ -13,6 +13,7 @@ class Enemy; // Forward declaration
 
 class Tower {
 protected:
+    int cost; // cuanto cuesta la unidad
     int damage; // que tanto dano hace la unidad
     float range; // rango al que puede atacar
     float attackSpeed; // intercalo de ataque en segundos
@@ -20,17 +21,20 @@ protected:
     sf::Sprite sprite;
     sf::Texture texture;
     sf::Clock attackClock; // mide el tiempo desde el último ataque
+    sf::Clock specialClock; // mide el tiempo desde el ultimo especial
+    float specialChance = 0.8f; // chance de que el especial ocurra (80%)
 
 public:
-    Tower(int damage, float range, float attackSpeed, float specialCooldown)
-        : damage(damage), range(range), attackSpeed(attackSpeed), specialCooldown(specialCooldown) {}
+    Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown)
+        : cost(cost), damage(damage), range(range), attackSpeed(attackSpeed), specialCooldown(specialCooldown) {}
 
-    virtual void attack(Enemy& enemy) = 0;
+    virtual void attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEnemies) = 0;
     virtual std::string type() const = 0;
 
     virtual ~Tower() = default;
 
     float getRange() const { return range; }
+    int getCost() const { return cost; }
 
     virtual void setPosition(const sf::Vector2f& pos) {sprite.setPosition(pos);}
 
