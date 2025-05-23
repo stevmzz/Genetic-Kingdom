@@ -17,13 +17,52 @@ Cell::Cell(float x, float y, float size) : selected(false), pathCell(false) {
 void Cell::draw(sf::RenderWindow& window) {
     window.draw(shape);
     if (tower) {
-        // Compute the center of the cell
         sf::Vector2f center = shape.getPosition();
         center.x += shape.getSize().x / 2.f;
         center.y += shape.getSize().y / 2.f;
 
-        tower->setPosition(center); // Now you're placing the sprite correctly
+        tower->setPosition(center);
         window.draw(tower->getSprite());
+    }
+
+    if (tower) {
+        sf::Text levelText;
+        const sf::Font& font = tower->getFont();
+
+        // Protección extra
+        if (font.getInfo().family.empty()) return;
+
+        levelText.setFont(font);
+        levelText.setCharacterSize(14);
+
+        // Color según el nivel
+        switch (tower->getLevel()) {
+            case 1: levelText.setFillColor(sf::Color::White); break;
+            case 2: levelText.setFillColor(sf::Color::Yellow); break;
+            case 3: levelText.setFillColor(sf::Color::Cyan); break;
+            default: levelText.setFillColor(sf::Color::Magenta); break; // fallback para nivel no esperado
+        }
+
+        levelText.setString("Lv." + std::to_string(tower->getLevel()));
+
+        sf::FloatRect bounds = levelText.getLocalBounds();
+        levelText.setOrigin(bounds.width / 2.f, 0.f);
+        levelText.setPosition((shape.getPosition().x + 35.0f), shape.getPosition().y + 50.f);
+
+        if (tower->recentlyUpgraded) {
+            float t = tower->upgradeFlashClock.getElapsedTime().asSeconds();
+
+            if (t > 1.0f) {
+                tower->recentlyUpgraded = false; // termina el parpadeo
+            } else {
+                if (static_cast<int>(t * 5) % 2 == 0) {
+                    window.draw(levelText); // parpadeo cada 0.2s
+                }
+                return; // evita que se dibuje doble
+            }
+        }
+
+        window.draw(levelText); // dibujo normal si no está parpadeando
     }
 }
 

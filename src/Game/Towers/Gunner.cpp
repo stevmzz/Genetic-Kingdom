@@ -43,3 +43,22 @@ void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
         specialClock.restart();
     }
 }
+
+int Gunner::getUpgradeCost() const {
+    return 100 + (level * 100); // Nivel 1:200, 2:300
+}
+
+void Gunner::upgrade() {
+    if (canUpgrade()) {
+        level++;
+        damage += 30;            // gran aumento de daño
+        range += 15.0f;          // mejora leve en rango
+        attackSpeed += 0.1f;     // mejora mínima en cadencia
+        specialChance += 0.1f;   // aumenta probabilidad de especial
+
+        recentlyUpgraded = true;
+        upgradeFlashClock.restart();
+
+        std::cout << "Gunner upgraded to level " << level << "\n";
+    }
+}

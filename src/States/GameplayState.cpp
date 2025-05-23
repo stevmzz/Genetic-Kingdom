@@ -52,9 +52,11 @@ void GameplayState::init() {
     sf::FloatRect textBounds = insufficientGoldText.getLocalBounds();
     insufficientGoldText.setPosition(
         (game->getWindow().getSize().x - textBounds.width) / 2.f,
-        game->getWindow().getSize().y - textBounds.height - 20.f
+        game->getWindow().getSize().y - textBounds.height - 100.f
     );
 
+    // font para celdas de las torres
+    Tower::setSharedFont(game->getFont());
 
     // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
     geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
@@ -159,6 +161,7 @@ void GameplayState::handleEvents(sf::Event& event) {
             selectedCellForPlacement = nullptr;
             towerButtons.clear();
             towerPriceTexts.clear();
+            showUpgradeGoldText = false;
             return;
         }
         }
@@ -209,6 +212,7 @@ void GameplayState::handleEvents(sf::Event& event) {
             selectedCellForPlacement = clickedCell;
             towerButtons.clear();
             towerPriceTexts.clear();
+            showUpgradeGoldText = false;
 
             sf::Vector2f basePos = clickedCell->getPosition();
             float offsetY = -50.0f;
@@ -233,6 +237,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
                         towerPriceTexts.clear();
+                        showUpgradeGoldText = false;
                     }
                 }
             );
@@ -264,6 +269,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
                         towerPriceTexts.clear();
+                        showUpgradeGoldText = false;
                     }
                 }
             );
@@ -296,6 +302,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
                         towerPriceTexts.clear();
+                        showUpgradeGoldText = false;
                     }
                 }
             );
@@ -313,6 +320,59 @@ void GameplayState::handleEvents(sf::Event& event) {
             towerButtons.push_back(btnArcher);
             towerButtons.push_back(btnMage);
             towerButtons.push_back(btnGunner);
+        }
+        else if (clickedCell && clickedCell->hasTower()) {
+            selectedCellForPlacement = clickedCell;
+            towerButtons.clear();
+            towerPriceTexts.clear();
+            showUpgradeGoldText = false;
+
+            std::shared_ptr<Tower> tower = clickedCell->getTower();
+            if (tower && tower->canUpgrade()) {
+                int upgradeCost = tower->getUpgradeCost();
+
+                sf::Vector2f basePos = clickedCell->getPosition();
+                sf::Vector2f btnSize(140.f, 60.f);
+
+                auto btnUpgrade = std::make_shared<Button>(
+                    (basePos.x - btnSize.x) + 215.0f / 2.f, basePos.y - 75.f,
+                    btnSize.x, btnSize.y,
+                    game->getFont(),
+                    "Upgrade",
+                    [tower, this]() {
+                        if (tower && tower->canUpgrade() && playerGold >= tower->getUpgradeCost()) {
+                            playerGold -= tower->getUpgradeCost();
+                            tower->upgrade();
+                            std::cout << "Tower upgraded! New level: " << tower->getLevel()
+                                      << ", Remaining gold: " << playerGold << "\n";
+                        } else {
+                            showGoldWarning = true;
+                            goldWarningClock.restart();
+                        }
+                        selectedCellForPlacement = nullptr;
+                        towerButtons.clear();
+                        towerPriceTexts.clear();
+                        showUpgradeGoldText = false;
+                    }
+                );
+                towerButtons.push_back(btnUpgrade);
+
+                upgradeGoldText.setFont(game->getFont());
+                upgradeGoldText.setCharacterSize(16);
+                upgradeGoldText.setFillColor(sf::Color::Yellow);
+                upgradeGoldText.setString(std::to_string(tower->getUpgradeCost()) + "g");
+
+                // posición centrada debajo del botón
+                sf::Vector2f btnPos((basePos.x - btnSize.x) + 215.0f / 2.f, basePos.y - 75.f);
+                sf::FloatRect textBounds = upgradeGoldText.getLocalBounds();
+
+                upgradeGoldText.setPosition(
+                    btnPos.x + (btnSize.x / 2.f) - (textBounds.width / 2.f), // centrar horizontalmente
+                    btnPos.y + btnSize.y + 5.f // justo debajo del botón
+                );
+
+                showUpgradeGoldText = true;
+            }
         }
     }
 }
@@ -481,6 +541,11 @@ void GameplayState::render(sf::RenderWindow& window) {
         } else {
             showGoldWarning = false;
         }
+    }
+
+    // muestra la cantidad de oro para mejorar la torre
+    if (showUpgradeGoldText) {
+        window.draw(upgradeGoldText);
     }
 
     // Muestra el oro en pantalla

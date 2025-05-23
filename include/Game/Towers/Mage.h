@@ -14,6 +14,8 @@ public:
     Mage();
     void attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEnemies) override;
     std::string type() const override { return "Mage"; }
+    int getUpgradeCost() const override;
+    void upgrade() override;
 };
 
 #endif // MAGE_H

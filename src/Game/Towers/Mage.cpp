@@ -63,3 +63,22 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
         specialClock.restart();
     }
 }
+
+int Mage::getUpgradeCost() const {
+    return 75 + (level * 75); // Nivel 1→150, 2→225
+}
+
+void Mage::upgrade() {
+    if (canUpgrade()) {
+        level++;
+        damage += 15;            // mejora moderada
+        range += 25.0f;          // rango estable
+        attackSpeed += 0.15f;    // mejora ligera en velocidad
+        specialCooldown -= 0.3f; // ataque especial más frecuente
+
+        recentlyUpgraded = true;
+        upgradeFlashClock.restart();
+
+        std::cout << "Mage upgraded to level " << level << "\n";
+    }
+}
