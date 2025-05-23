@@ -23,6 +23,9 @@ protected:
     sf::Clock attackClock; // mide el tiempo desde el último ataque
     sf::Clock specialClock; // mide el tiempo desde el ultimo especial
     float specialChance = 0.8f; // chance de que el especial ocurra (80%)
+    int level = 1;
+    const int maxLevel = 3;
+    inline static sf::Font sharedFont;
 
 public:
     Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown)
@@ -30,6 +33,9 @@ public:
 
     virtual void attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEnemies) = 0;
     virtual std::string type() const = 0;
+
+    sf::Clock upgradeFlashClock;
+    bool recentlyUpgraded = false;
 
     virtual ~Tower() = default;
 
@@ -39,6 +45,19 @@ public:
     virtual void setPosition(const sf::Vector2f& pos) {sprite.setPosition(pos);}
 
     virtual const sf::Sprite& getSprite() const {return sprite;}
+
+    virtual bool canUpgrade() const { return level < maxLevel; }
+    virtual int getUpgradeCost() const = 0;
+    virtual void upgrade() = 0;
+    int getLevel() const { return level; }
+
+    static void setSharedFont(const sf::Font& font) {
+        sharedFont = font;
+    }
+
+    const sf::Font& getFont() const {
+        return sharedFont;
+    }
 };
 
 #endif //TOWER_H

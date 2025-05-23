@@ -63,3 +63,21 @@ void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
         burstActive = false;
     }
 }
+
+int Archer::getUpgradeCost() const {
+    return 50 + (level * 50);
+}
+
+void Archer::upgrade() {
+    if (canUpgrade()) {
+        level++;
+        damage += 10;
+        range += 30.0f;
+        attackSpeed += 0.2f;
+
+        recentlyUpgraded = true;
+        upgradeFlashClock.restart();
+
+        std::cout << "Archer upgraded to level " << level << "\n";
+    }
+}

@@ -30,10 +30,12 @@ private:
     std::vector<std::shared_ptr<sf::Text>> towerPriceTexts;
     Cell* selectedCellForPlacement = nullptr; // celda en la que se mostraron los botones
     bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
-    int playerGold = 50; // oro inicial
+    int playerGold = 100000; // oro inicial
     sf::Text insufficientGoldText;
     sf::Clock goldWarningClock;
     bool showGoldWarning = false;
+    sf::Text upgradeGoldText;
+    bool showUpgradeGoldText = false;
 
 public:
     GameplayState();
