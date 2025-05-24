@@ -42,6 +42,7 @@ DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2
 
 // actualización por frame
 void DarkElves::update(float dt) {
+    Enemy::update(dt);
     if (!isActive || path.empty() || currentPathIndex >= path.size()) {
         return;
     }
@@ -75,6 +76,21 @@ void DarkElves::takeDamage(float amount, const std::string& damageType) {
 
     float finalDamage = amount * damageMultiplier;
     health -= finalDamage;
+
+    // Crear texto flotante
+    FloatingDamageText damageText;
+    damageText.text.setFont(sharedFont);
+    damageText.text.setCharacterSize(16);
+    damageText.text.setFillColor(sf::Color::Red);
+    damageText.text.setString("-" + std::to_string(static_cast<int>(finalDamage)));
+
+    sf::FloatRect bounds = damageText.text.getLocalBounds();
+    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
+    // Posición encima del enemigo
+    damageText.text.setPosition(position.x, position.y - 60.f);
+
+    floatingTexts.push_back(damageText);
 
     if (health <= 0) {
         health = 0;

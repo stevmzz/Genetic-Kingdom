@@ -112,6 +112,21 @@ void Ogre::takeDamage(float amount, const std::string& damageType) {
     // reducir la salud
     health -= finalDamage;
 
+    // Crear texto flotante
+    FloatingDamageText damageText;
+    damageText.text.setFont(sharedFont);
+    damageText.text.setCharacterSize(16);
+    damageText.text.setFillColor(sf::Color::Red);
+    damageText.text.setString("-" + std::to_string(static_cast<int>(finalDamage)));
+
+    sf::FloatRect bounds = damageText.text.getLocalBounds();
+    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
+    // Posición encima del enemigo
+    damageText.text.setPosition(position.x, position.y - 60.f);
+
+    floatingTexts.push_back(damageText);
+
     // verificar si el enemigo ha muerto
     if (health <= 0) {
         health = 0;

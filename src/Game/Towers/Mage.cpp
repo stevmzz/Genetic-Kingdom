@@ -31,7 +31,7 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
 
     // ataque normal
     if (elapsed >= 1.0f / attackSpeed) {
-        enemy.receiveDamage(damage);
+        enemy.takeDamage(damage, "magic");
 
         // Animacion de bola de fuego
         Fireball fb(fireballTexture, sprite.getPosition(), enemy.getPosition());
@@ -56,7 +56,7 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
             activeFireballs.push_back(specialFb);
 
             // daño fuerte al objetivo principal
-            enemy.receiveDamage(extraDamage);
+            enemy.takeDamage(extraDamage, "magic");
 
             // daño en área a enemigos cercanos
             for (const auto& other : allEnemies) {
@@ -68,7 +68,7 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
 
                 if (dist <= aoeRadius) {
                     std::cout << "Explosion hits nearby enemy for " << damage << " damage.\n";
-                    other->receiveDamage(damage*1.2);
+                    other->takeDamage(damage*1.2, "magic");
                 }
             }
         }

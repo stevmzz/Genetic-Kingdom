@@ -33,7 +33,7 @@ void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
     // ataque normal
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
-        enemy.receiveDamage(damage);
+        enemy.takeDamage(damage, "arrow");
 
         // Crear flecha
         Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());
@@ -60,7 +60,7 @@ void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
     if (burstActive && burstShotsFired < totalBurstShots) {
         if (burstClock.getElapsedTime().asSeconds() >= burstInterval) {
             std::cout << "Burst shot " << (burstShotsFired + 1) << " hits for " << damage*0.8 << " damage.\n";
-            enemy.receiveDamage(damage*0.8);
+            enemy.takeDamage(damage*0.8, "arrow");
 
             // Crear flecha
             Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());
