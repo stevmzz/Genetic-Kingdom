@@ -18,7 +18,7 @@ DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2
         std::cerr << "error al cargar imagen: elfo oscuro" << std::endl;
     }
 
-    sprite.setScale(0.28f, 0.28f); // tamaño intermedio
+    sprite.setScale(0.11f, 0.11f); // tamaño intermedio
     sprite.setRotation(0.0f);
 }
 
@@ -32,11 +32,11 @@ DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2
         DARKELF_ARTILLERY_RESISTANCE * (0.8f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f),
         15, position, path) {
 
-    if (!loadTexture("assets/images/enemies/darkelf.png")) {
+    if (!loadTexture("assets/images/enemies/DarkElve.png")) {
         std::cerr << "error al cargar imagen: elfo oscuro" << std::endl;
     }
 
-    sprite.setScale(0.28f, 0.28f);
+    sprite.setScale(0.11f, 0.11f);
     sprite.setRotation(0.0f);
 }
 

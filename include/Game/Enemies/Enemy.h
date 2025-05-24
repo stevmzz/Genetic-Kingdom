@@ -5,6 +5,8 @@
 #include <vector>
 #include "../Genetics/Chromosome.h"
 
+class Grid;
+
 class Enemy : public sf::Drawable {
 protected:
     int id;
@@ -59,4 +61,5 @@ public:
     float getTotalDistanceTraveled() const;
     float getTimeAlive() const;
     void receiveDamage(float damage);
+    void recalculatePath(Grid* grid, const sf::Vector2f& goal);
 };

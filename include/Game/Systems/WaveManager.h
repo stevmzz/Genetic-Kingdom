@@ -7,6 +7,8 @@
 #include <SFML/System/Vector2.hpp>
 #include "../Enemies/Enemy.h"
 #include "../Genetics/Chromosome.h"
+#include "../Grid/Grid.h"
+#include "../Systems/Pathfinding.h"
 
 class WaveManager {
 private:
@@ -32,9 +34,11 @@ private:
     float lastWaveMaxProgress;
     float lastWaveAvgProgress;
     sf::Clock enemySpawnTimer;
+    Grid* gridReference;
+    sf::Vector2f goalPoint;
 
 public:
-    WaveManager(const std::vector<sf::Vector2f>& path, float enemySpawnInterval = 1.5f);
+    WaveManager(const std::vector<sf::Vector2f>& path, Grid* grid, const sf::Vector2f& goal, float enemySpawnInterval = 1.5f);
 
     std::vector<std::unique_ptr<Enemy>> update(float dt);
     int getCurrentWave() const;
