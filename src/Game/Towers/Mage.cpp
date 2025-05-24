@@ -15,6 +15,8 @@ Mage::Mage() : Tower(
     texture.loadFromFile("assets/images/towers/Mage.png");
     sprite.setTexture(texture);
 
+    fireballTexture.loadFromFile("assets/images/towers/Fireball.png");
+
     // Centrar el origen del sprite
     sf::FloatRect bounds = sprite.getLocalBounds();
     sprite.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
@@ -30,6 +32,11 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
     // ataque normal
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.receiveDamage(damage);
+
+        // Animacion de bola de fuego
+        Fireball fb(fireballTexture, sprite.getPosition(), enemy.getPosition());
+        activeFireballs.push_back(fb);
+
         attackClock.restart();
     }
 
@@ -42,6 +49,11 @@ void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEn
             std::cout << "Mage fires an area explosion\n";
             float aoeRadius = 200.0f;
             float extraDamage = damage * 1.5f;
+
+            // Crear animación especial de bola de fuego grande
+            Fireball specialFb(fireballTexture, sprite.getPosition(), enemy.getPosition());
+            specialFb.setScale(0.2f); // más grande
+            activeFireballs.push_back(specialFb);
 
             // daño fuerte al objetivo principal
             enemy.receiveDamage(extraDamage);
@@ -80,5 +92,22 @@ void Mage::upgrade() {
         upgradeFlashClock.restart();
 
         std::cout << "Mage upgraded to level " << level << "\n";
+    }
+}
+
+void Mage::updateProjectiles(float dt) {
+    for (auto it = activeFireballs.begin(); it != activeFireballs.end(); ) {
+        it->update(dt);
+        if (it->hasReachedTarget()) {
+            it = activeFireballs.erase(it); // eliminar fireballs que ya impactaron
+        } else {
+            ++it;
+        }
+    }
+}
+
+void Mage::drawProjectiles(sf::RenderWindow& window) {
+    for (const auto& fireball : activeFireballs) {
+        fireball.draw(window);
     }
 }

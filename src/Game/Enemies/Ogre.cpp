@@ -64,6 +64,7 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, 
 
 // implementacion del metodo update
 void Ogre::update(float dt) {
+    Enemy::update(dt);
     if (!isActive || path.empty() || currentPathIndex >= path.size()) {
         return;
     }

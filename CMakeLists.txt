@@ -39,6 +39,12 @@ set(SOURCES
         src/Game/Towers/Archer.cpp
         src/Game/Towers/Gunner.cpp
         src/Game/Towers/Mage.cpp
+        include/Effects/Arrow.h
+        src/Effects/Arrow.cpp
+        include/Effects/Fireball.h
+        src/Effects/Fireball.cpp
+        include/Effects/Cannonball.h
+        src/Effects/Cannonball.cpp
 )
 
 # Crea el ejecutable

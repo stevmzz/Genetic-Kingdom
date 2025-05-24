@@ -48,7 +48,7 @@ public:
     void cleanup() override;
     void createTestPath();
     void prepareNextGeneration();
-    void handleTowerAttacks();
+    void handleTowerAttacks(float dt);
 
     enum class TowerType {
         Archer,

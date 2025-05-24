@@ -1,6 +1,9 @@
 #include "../include/Game/Enemies/Enemy.h"
 #include "../include/Game/Systems/Pathfinding.h"
 #include <cmath>
+#include <iostream>
+
+#include "Game/Towers/Tower.h"
 
 // constructor del enemigo
 Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
@@ -111,7 +114,14 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         healthBar.setFillColor(sf::Color::Green);
         healthBar.setPosition(position.x - 20.f, position.y - 40.f);
         target.draw(healthBar, states);
+
     }
+
+    // dibujar los textos flotantes de daño
+    for (const auto& dmgText : floatingTexts) {
+        target.draw(dmgText.text, states);
+    }
+
 }
 
 
@@ -160,9 +170,49 @@ void Enemy::receiveDamage(float damage) {
     // reducir salud
     health -= damage;
 
+    // Crear texto flotante
+    FloatingDamageText damageText;
+    damageText.text.setFont(sharedFont);
+    damageText.text.setCharacterSize(16);
+    damageText.text.setFillColor(sf::Color::Red);
+    damageText.text.setString("-" + std::to_string(static_cast<int>(damage)));
+
+    sf::FloatRect bounds = damageText.text.getLocalBounds();
+    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
+    // Posición encima del enemigo
+    damageText.text.setPosition(position.x, position.y - 60.f);
+
+    floatingTexts.push_back(damageText);
+
     // si la salud cae por debajo de 0, marcar como inactivo
     if (health <= 0.f) {
         health = 0.f;
         isActive = false;
+    }
+}
+
+void Enemy::setSharedFont(const sf::Font& font) {
+    sharedFont = font;
+}
+
+void Enemy::update(float dt) {
+    for (auto it = floatingTexts.begin(); it != floatingTexts.end(); ) {
+        float t = it->timer.getElapsedTime().asSeconds();
+
+        if (t > 0.8f) {
+            it = floatingTexts.erase(it);
+        } else {
+            sf::Vector2f pos = it->text.getPosition();
+            pos.y -= 20.f * dt; // flota hacia arriba
+            it->text.setPosition(pos);
+
+            // desvanecer
+            sf::Color color = it->text.getFillColor();
+            color.a = static_cast<sf::Uint8>(255 * (1.0f - t / 0.8f));
+            it->text.setFillColor(color);
+
+            ++it;
+        }
     }
 }
