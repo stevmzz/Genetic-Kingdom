@@ -20,7 +20,8 @@ private:
     const float CELL_SIZE = 70.0f;
     sf::Texture backgroundTexture;
     sf::Sprite backgroundSprite;
-    std::vector<sf::Vector2f> testPath;
+    sf::Vector2f spawnPoint;
+    sf::Vector2f goalPoint;
     std::vector<std::unique_ptr<Enemy>> enemies;
     std::unique_ptr<WaveManager> waveManager;
     std::unique_ptr<Genetics> geneticsSystem;
@@ -28,7 +29,7 @@ private:
     bool gameOver;
     std::vector<std::shared_ptr<Button>> towerButtons;
     std::vector<std::shared_ptr<sf::Text>> towerPriceTexts;
-    Cell* selectedCellForPlacement = nullptr; // celda en la que se mostraron los botones
+    Cell* selectedCellForPlacement = nullptr;
     bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
     int playerGold = 100000; // oro inicial
     sf::Text insufficientGoldText;
@@ -46,9 +47,11 @@ public:
     void update(float dt) override;
     void render(sf::RenderWindow& window) override;
     void cleanup() override;
-    void createTestPath();
+    void initializeSpawnAndGoalPoints();
     void prepareNextGeneration();
     void handleTowerAttacks(float dt);
+    bool canPlaceTowerAt(Cell* cell);
+    void recalculateEnemyPaths();
 
     enum class TowerType {
         Archer,

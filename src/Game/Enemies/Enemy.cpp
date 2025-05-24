@@ -1,8 +1,8 @@
 #include "../include/Game/Enemies/Enemy.h"
 #include "../include/Game/Systems/Pathfinding.h"
+#include "../include/Game/Grid/Grid.h"
 #include <cmath>
 #include <iostream>
-
 #include "Game/Towers/Tower.h"
 
 // constructor del enemigo
@@ -32,7 +32,7 @@ Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float ar
 
 
 
-// contructor badado en cromosoma
+// constructor basado en cromosoma
 Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
     :   id(-1),
         health(chromosome.getHealth()),
@@ -115,6 +115,14 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         healthBar.setPosition(position.x - 20.f, position.y - 40.f);
         target.draw(healthBar, states);
 
+        // borde de la barra de vida
+        sf::RectangleShape healthBarBorder;
+        healthBarBorder.setSize(sf::Vector2f(40.f, 5.f));
+        healthBarBorder.setFillColor(sf::Color::Transparent);
+        healthBarBorder.setOutlineColor(sf::Color::Black);
+        healthBarBorder.setOutlineThickness(1.f);
+        healthBarBorder.setPosition(position.x - 20.f, position.y - 40.f);
+        target.draw(healthBarBorder, states);
     }
 
     // dibujar los textos flotantes de daño
@@ -134,6 +142,29 @@ void Enemy::setPath(const std::vector<sf::Vector2f>& newPath) {
     // actualizar direccion
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex]);
+    }
+}
+
+
+
+// recalcular el path usando A*
+void Enemy::recalculatePath(Grid* grid, const sf::Vector2f& goal) {
+    if (!grid) {
+        return;
+    }
+
+    // calcular nuevo path desde la posición actual hasta el objetivo
+    auto newPath = Pathfinding::findPath(grid, position, goal);
+
+    if (!newPath.empty()) {
+        // actualizar el path
+        path = newPath;
+        currentPathIndex = 0;
+
+        // actualizar la dirección hacia el primer punto del nuevo path
+        if (path.size() > 1) {
+            direction = Pathfinding::getDirection(position, path[0]);
+        }
     }
 }
 
@@ -164,6 +195,8 @@ float Enemy::getTotalDistanceTraveled() const {
 float Enemy::getTimeAlive() const {
     return lifeTimer.getElapsedTime().asSeconds();
 }
+
+
 
 // aplicar daño al enemigo
 void Enemy::receiveDamage(float damage) {

@@ -1,0 +1,83 @@
+#include "../include/Game/Enemies/Harpy.h"
+#include "../include/Game/Systems/Pathfinding.h"
+#include <iostream>
+#include <cmath>
+
+// valores base de la harpía
+const float HARPY_BASE_HEALTH = 120.0f;              // vida media
+const float HARPY_BASE_SPEED = 90.0f;                // velocidad intermedia
+const float HARPY_ARROW_RESISTANCE = 0.2f;           // poca resistencia a flechas
+const float HARPY_MAGIC_RESISTANCE = 0.3f;           // poca resistencia a magia
+const float HARPY_ARTILLERY_RESISTANCE = 1.0f;       // inmunidad: no se puede atacar con artillería
+
+// constructor normal
+Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+    : Enemy(HARPY_BASE_HEALTH, HARPY_BASE_SPEED, HARPY_ARROW_RESISTANCE, HARPY_MAGIC_RESISTANCE, HARPY_ARTILLERY_RESISTANCE, 15, position, path) {
+
+    if (!loadTexture("assets/images/enemies/Harpy.png")) {
+        std::cerr << "error al cargar imagen: harpía" << std::endl;
+    }
+
+    sprite.setScale(0.11f, 0.11f); // tamaño proporcional
+    sprite.setRotation(0.0f);
+}
+
+// constructor con cromosoma
+Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome)
+    : Enemy(
+        HARPY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
+        HARPY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),
+        HARPY_ARROW_RESISTANCE * (0.8f + (chromosome.getArrowResistance() / 2.0f) * 0.4f),
+        HARPY_MAGIC_RESISTANCE * (0.8f + (chromosome.getMagicResistance() / 2.0f) * 0.4f),
+        HARPY_ARTILLERY_RESISTANCE, // la artillería no puede dañarla, así que no se modifica
+        15, position, path) {
+
+    if (!loadTexture("assets/images/enemies/Harpy.png")) {
+        std::cerr << "error al cargar imagen: harpía" << std::endl;
+    }
+
+    sprite.setScale(0.11f, 0.11f);
+    sprite.setRotation(0.0f);
+}
+
+// actualización por frame
+void Harpy::update(float dt) {
+    if (!isActive || path.empty() || currentPathIndex >= path.size()) {
+        return;
+    }
+
+    sf::Vector2f oldPosition = position;
+    position = Pathfinding::moveAlongPath(position, path, currentPathIndex, speed, dt);
+    sprite.setPosition(position);
+
+    sf::Vector2f deltaPos = position - oldPosition;
+    float distance = std::sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+    totalDistanceTraveled += distance;
+
+    if (currentPathIndex < path.size()) {
+        sf::Vector2f nextPoint = path[currentPathIndex];
+        sf::Vector2f moveDirection = Pathfinding::getDirection(position, nextPoint);
+        direction = moveDirection;
+    }
+}
+
+// recibir daño según tipo
+void Harpy::takeDamage(float amount, const std::string& damageType) {
+    float damageMultiplier = 0.0f;
+
+    if (damageType == "arrow") {
+        damageMultiplier = 1.0f - arrowResistance;
+    } else if (damageType == "magic") {
+        damageMultiplier = 1.0f - magicResistance;
+    } else if (damageType == "artillery") {
+        damageMultiplier = 0.0f; // inmunidad a artillería
+    }
+
+    float finalDamage = amount * damageMultiplier;
+    health -= finalDamage;
+
+    if (health <= 0) {
+        health = 0;
+        isActive = false;
+    }
+}

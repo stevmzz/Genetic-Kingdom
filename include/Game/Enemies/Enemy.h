@@ -5,6 +5,8 @@
 #include <vector>
 #include "../Genetics/Chromosome.h"
 
+class Grid;
+
 class Enemy : public sf::Drawable {
 protected:
     int id;
@@ -68,4 +70,5 @@ public:
     void receiveDamage(float damage);
     inline static sf::Font sharedFont;
     static void setSharedFont(const sf::Font& font);
+    void recalculatePath(Grid* grid, const sf::Vector2f& goal);
 };

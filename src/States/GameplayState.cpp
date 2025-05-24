@@ -8,6 +8,11 @@
 #include "Game/Towers/Archer.h"
 #include "Game/Towers/Mage.h"
 #include "Game/Towers/Gunner.h"
+#include "../include/Game/Systems/Pathfinding.h"
+#include "Game/Enemies/Ogre.h"
+#include "Game/Enemies/DarkElves.h"
+#include "Game/Enemies/Harpy.h"
+#include "Game/Enemies/Mercenary.h"
 
 // constructor del estado de juego
 GameplayState::GameplayState()
@@ -40,8 +45,8 @@ void GameplayState::init() {
     float gridY = (window.getSize().y - GRID_ROWS * CELL_SIZE) / 2;
     gameGrid = std::make_unique<Grid>(gridX, gridY, GRID_ROWS, GRID_COLS, CELL_SIZE);
 
-    // crear un camino de prueba para los enemigos
-    createTestPath();
+    // inicializar puntos de spawn y objetivo
+    initializeSpawnAndGoalPoints();
 
     // texto que avisa al jugador si no tiene suficiente dinero
     // siempre esta ahi, solo se muestra cuando es necesario
@@ -64,8 +69,11 @@ void GameplayState::init() {
     // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
     geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
 
-    // inicializar el gestor de oleadas (camino, intervalo entre enemigos)
-    waveManager = std::make_unique<WaveManager>(testPath, 1.5f);
+    // crear un path inicial para calcular la longitud total
+    auto initialPath = Pathfinding::findPath(gameGrid.get(), spawnPoint, goalPoint);
+
+    // inicializar el gestor de oleadas
+    waveManager = std::make_unique<WaveManager>(initialPath, gameGrid.get(), goalPoint, 1.5f);
 
     // preparar cromosomas para la primera oleada
     std::vector<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
@@ -77,9 +85,8 @@ void GameplayState::init() {
 
 
 
-// crea un camino de prueba para los enemigos
-void GameplayState::createTestPath() {
-    // obtener informacion de la cuadricula
+// inicializa el punto de entrada y salida
+void GameplayState::initializeSpawnAndGoalPoints() {
     float gridStartX = gameGrid->getX();
     float gridStartY = gameGrid->getY();
     int rows = gameGrid->getRows();
@@ -90,45 +97,53 @@ void GameplayState::createTestPath() {
     int middleRow = rows / 2;
 
     // punto de entrada (borde izquierdo, fila central)
-    sf::Vector2f entryPoint(gridStartX - cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
+    spawnPoint = sf::Vector2f(gridStartX - cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
 
     // punto de salida (borde derecho, fila central)
-    sf::Vector2f exitPoint(gridStartX + cols * cellSize + cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
+    goalPoint = sf::Vector2f(gridStartX + (cols + 1) * cellSize + cellSize / 2, gridStartY + middleRow * cellSize + cellSize / 2);
+}
 
-    // limpiar el camino anterior
-    testPath.clear();
 
-    // añadir punto de entrada
-    testPath.push_back(entryPoint);
 
-    // añadir puntos a lo largo del camino recto
-    for (int i = 0; i <= cols; i++) {
-        sf::Vector2f pathPoint(gridStartX + i * cellSize, gridStartY + middleRow * cellSize + cellSize/2);
-        testPath.push_back(pathPoint);
+
+// verificar si se puede colocar una torre
+bool GameplayState::canPlaceTowerAt(Cell* cell) {
+    if (!cell || cell->hasTower()) {
+        return false;
     }
 
-    // añadir punto de salida
-    testPath.push_back(exitPoint);
+    // temporalmente "colocar" una torre para verificar
+    cell->placeTower(std::make_shared<Archer>());
 
-    // marcar las celdas del camino como no disponibles para colocar torres
-    for (int i = 0; i < cols; i++) {
-        Cell* pathCell = gameGrid->getCellAt(middleRow, i);
-        if (pathCell) {
-            pathCell->setIsPath(true);
+    // verificar que todavía existe un camino
+    bool hasPath = Pathfinding::hasValidPath(gameGrid.get(), spawnPoint, goalPoint);
+
+    // verificar enemigos activos
+    if (hasPath) {
+        for (const auto& enemy : enemies) {
+            if (enemy->isAlive()) {
+                auto enemyPath = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
+                if (enemyPath.empty()) {
+                    hasPath = false;
+                    break;
+                }
+            }
         }
     }
 
-    // calcular la longitud total del camino y pasarla al WaveManager
-    float totalLength = 0.0f;
-    if (testPath.size() > 1) {
-        for (size_t i = 0; i < testPath.size() - 1; i++) {
-            sf::Vector2f segment = testPath[i+1] - testPath[i];
-            totalLength += std::sqrt(segment.x * segment.x + segment.y * segment.y);
-        }
-    }
+    // remover la torre temporal
+    cell->placeTower(nullptr);
+    return hasPath;
+}
 
-    if (waveManager) {
-        waveManager->setPathTotalLength(totalLength);
+
+
+// recalcular paths de enemigos
+void GameplayState::recalculateEnemyPaths() {
+    for (auto& enemy : enemies) {
+        if (enemy->isAlive()) {
+            enemy->recalculatePath(gameGrid.get(), goalPoint);
+        }
     }
 }
 
@@ -265,6 +280,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         if (playerGold >= tower->getCost()) {
                             selectedCellForPlacement->placeTower(tower);
                             playerGold -= tower->getCost();
+                            recalculateEnemyPaths();
                         } else {
                             showGoldWarning = true;
                             goldWarningClock.restart();
@@ -393,8 +409,13 @@ void GameplayState::update(float dt) {
     // actualizar el gestor de oleadas
     auto newEnemies = waveManager->update(dt);
 
-    // añadir los nuevos enemigos a la lista
+    // añadir los nuevos enemigos a la lista con paths calculados
     for (auto& enemy : newEnemies) {
+        // calcular el path inicial para el enemigo
+        auto path = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
+        if (!path.empty()) {
+            enemy->setPath(path);
+        }
         enemies.push_back(std::move(enemy));
     }
 
