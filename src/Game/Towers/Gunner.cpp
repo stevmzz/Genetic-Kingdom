@@ -31,7 +31,7 @@ Gunner::Gunner() : Tower(
 void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
-        enemy.receiveDamage(damage);\
+        enemy.takeDamage(damage, "artillery");
 
         Cannonball bullet(bulletTexture, sprite.getPosition(), enemy.getPosition());
         bullet.setScale(0.02f); // más pequeño que fireball
@@ -52,7 +52,7 @@ void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
             specialBullet.setScale(0.06f); // más pequeño que fireball
             activeBullets.push_back(specialBullet);
 
-            enemy.receiveDamage(specialDamage);
+            enemy.takeDamage(specialDamage, "artillery");
         }
         specialClock.restart();
     }
