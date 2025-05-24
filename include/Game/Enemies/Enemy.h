@@ -44,6 +44,13 @@ public:
         const sf::Vector2f& position,
         const std::vector<sf::Vector2f>& path);
 
+    struct FloatingDamageText {
+        sf::Text text;
+        sf::Clock timer;
+    };
+
+    std::vector<FloatingDamageText> floatingTexts;
+
     virtual ~Enemy() = default;
 
     virtual void update(float dt) = 0;
@@ -61,5 +68,7 @@ public:
     float getTotalDistanceTraveled() const;
     float getTimeAlive() const;
     void receiveDamage(float damage);
+    inline static sf::Font sharedFont;
+    static void setSharedFont(const sf::Font& font);
     void recalculatePath(Grid* grid, const sf::Vector2f& goal);
 };

@@ -3,6 +3,8 @@
 //
 
 #include "Game/Towers/Gunner.h"
+
+#include "Effects/Cannonball.h"
 #include "Game/Enemies/Enemy.h"
 
 Gunner::Gunner() : Tower(
@@ -14,6 +16,8 @@ Gunner::Gunner() : Tower(
     ) {
     texture.loadFromFile("assets/images/towers/Gunner.png");
     sprite.setTexture(texture);
+
+    bulletTexture.loadFromFile("assets/images/towers/Cannonball.png");
 
     // Centrar el origen del sprite
     sf::FloatRect bounds = sprite.getLocalBounds();
@@ -27,7 +31,12 @@ Gunner::Gunner() : Tower(
 void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
-        enemy.receiveDamage(damage);
+        enemy.receiveDamage(damage);\
+
+        Cannonball bullet(bulletTexture, sprite.getPosition(), enemy.getPosition());
+        bullet.setScale(0.02f); // más pequeño que fireball
+        activeBullets.push_back(bullet);
+
         attackClock.restart(); // reinicia el temporizador
     }
 
@@ -38,6 +47,11 @@ void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
         if (roll <= specialChance) {
             float specialDamage = damage * 2.0f;
             std::cout << "Gunner fires big damage shot causing " << specialDamage << " damage\n";
+
+            Cannonball specialBullet(bulletTexture, sprite.getPosition(), enemy.getPosition());
+            specialBullet.setScale(0.06f); // más pequeño que fireball
+            activeBullets.push_back(specialBullet);
+
             enemy.receiveDamage(specialDamage);
         }
         specialClock.restart();
@@ -60,5 +74,22 @@ void Gunner::upgrade() {
         upgradeFlashClock.restart();
 
         std::cout << "Gunner upgraded to level " << level << "\n";
+    }
+}
+
+void Gunner::updateProjectiles(float dt) {
+    for (auto it = activeBullets.begin(); it != activeBullets.end(); ) {
+        it->update(dt);
+        if (it->hasReachedTarget()) {
+            it = activeBullets.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+void Gunner::drawProjectiles(sf::RenderWindow& window) {
+    for (const auto& bullet : activeBullets) {
+        bullet.draw(window);
     }
 }

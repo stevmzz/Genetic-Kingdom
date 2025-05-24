@@ -9,6 +9,8 @@
 #include "Tower.h"
 #include <iostream>
 
+#include "Effects/Cannonball.h"
+
 class Gunner : public Tower {
 public:
     Gunner();
@@ -16,6 +18,11 @@ public:
     std::string type() const override { return "Gunner"; }
     int getUpgradeCost() const override;
     void upgrade() override;
+    void updateProjectiles(float dt);
+    void drawProjectiles(sf::RenderWindow& window);
+private:
+    sf::Texture bulletTexture;
+    std::vector<Cannonball> activeBullets;
 };
 
 #endif // GUNNER_H

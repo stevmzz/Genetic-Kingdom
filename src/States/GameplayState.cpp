@@ -63,6 +63,9 @@ void GameplayState::init() {
     // font para celdas de las torres
     Tower::setSharedFont(game->getFont());
 
+    // Font para dano encima de enemigos
+    Enemy::setSharedFont(game->getFont());
+
     // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
     geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
 
@@ -450,7 +453,7 @@ void GameplayState::update(float dt) {
     }
 
     // Hace que las torres ataquen los enemigos
-    handleTowerAttacks();
+    handleTowerAttacks(dt);
 
     // si el juego no ha terminado, comprobar si la oleada ha terminado
     if (!gameOver) {
@@ -498,6 +501,24 @@ void GameplayState::render(sf::RenderWindow& window) {
     // dibujar la cuadricula
     if (gameGrid) {
         gameGrid->draw(window);
+    }
+
+    // dibujar proyectiles de torres
+    for (const auto& row : gameGrid->getCells()) {
+        for (const auto& cell : row) {
+            if (cell.hasTower()) {
+                auto tower = cell.getTower();
+                if (tower->type() == "Archer") {
+                    std::dynamic_pointer_cast<Archer>(tower)->drawProjectiles(window);
+                }
+                if (tower->type() == "Mage") {
+                    std::dynamic_pointer_cast<Mage>(tower)->drawProjectiles(window);
+                }
+                if (tower->type() == "Gunner") {
+                    std::dynamic_pointer_cast<Gunner>(tower)->drawProjectiles(window);
+                }
+            }
+        }
     }
 
     // dibujar enemigos
@@ -590,13 +611,23 @@ void GameplayState::cleanup() {
     geneticsSystem.reset();
 }
 
-void GameplayState::handleTowerAttacks() {
+void GameplayState::handleTowerAttacks(float dt) {
     const auto& cellGrid = gameGrid->getCells(); // get 2D vector of cells
 
     for (const auto& row : cellGrid) {
         for (const auto& cell : row) {
             if (cell.hasTower()) {
                 auto tower = cell.getTower();
+
+                if (tower->type() == "Archer") {
+                    std::dynamic_pointer_cast<Archer>(tower)->updateProjectiles(dt);
+                }
+                if (tower->type() == "Mage") {
+                    std::dynamic_pointer_cast<Mage>(tower)->updateProjectiles(dt);
+                }
+                if (tower->type() == "Gunner") {
+                    std::dynamic_pointer_cast<Gunner>(tower)->updateProjectiles(dt);
+                }
 
                 for (const auto& enemyPtr : enemies) {
                     if (enemyPtr->isAlive()) {

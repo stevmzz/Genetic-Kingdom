@@ -8,6 +8,8 @@
 
 #include "Tower.h"
 #include <iostream>
+#include "Effects/Fireball.h"
+#include <vector>
 
 class Mage : public Tower {
 public:
@@ -16,6 +18,11 @@ public:
     std::string type() const override { return "Mage"; }
     int getUpgradeCost() const override;
     void upgrade() override;
+    void updateProjectiles(float dt);
+    void drawProjectiles(sf::RenderWindow& window);
+private:
+    std::vector<Fireball> activeFireballs;
+    sf::Texture fireballTexture;
 };
 
 #endif // MAGE_H

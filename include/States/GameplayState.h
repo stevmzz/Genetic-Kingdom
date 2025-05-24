@@ -49,7 +49,7 @@ public:
     void cleanup() override;
     void initializeSpawnAndGoalPoints();
     void prepareNextGeneration();
-    void handleTowerAttacks();
+    void handleTowerAttacks(float dt);
     bool canPlaceTowerAt(Cell* cell);
     void recalculateEnemyPaths();
 

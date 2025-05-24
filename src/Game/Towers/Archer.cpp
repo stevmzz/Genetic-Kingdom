@@ -13,8 +13,11 @@ Archer::Archer() : Tower(
     1.5f, // attack speed
     5.0f // special cooldown
     ) {
-    texture.loadFromFile("assets/images/towers/Archer.png");
+    texture.loadFromFile("assets/images/towers/Archer.png"); // textura de torre
     sprite.setTexture(texture);
+
+    // Textura de flecha
+    arrowTexture.loadFromFile("assets/images/towers/Arrow.png");
 
     // Centrar el origen del sprite
     sf::FloatRect bounds = sprite.getLocalBounds();
@@ -31,6 +34,11 @@ void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.receiveDamage(damage);
+
+        // Crear flecha
+        Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());
+        activeArrows.push_back(arrow);
+
         attackClock.restart(); // reinicia el temporizador
     }
 
@@ -53,6 +61,11 @@ void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
         if (burstClock.getElapsedTime().asSeconds() >= burstInterval) {
             std::cout << "Burst shot " << (burstShotsFired + 1) << " hits for " << damage*0.8 << " damage.\n";
             enemy.receiveDamage(damage*0.8);
+
+            // Crear flecha
+            Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());
+            activeArrows.push_back(arrow);
+
             burstShotsFired++;
             burstClock.restart();
         }
@@ -79,5 +92,22 @@ void Archer::upgrade() {
         upgradeFlashClock.restart();
 
         std::cout << "Archer upgraded to level " << level << "\n";
+    }
+}
+
+void Archer::updateProjectiles(float dt) {
+    for (auto it = activeArrows.begin(); it != activeArrows.end(); ) {
+        it->update(dt);
+        if (it->hasReachedTarget()) {
+            it = activeArrows.erase(it); // eliminar flechas que ya llegaron
+        } else {
+            ++it;
+        }
+    }
+}
+
+void Archer::drawProjectiles(sf::RenderWindow& window) {
+    for (const auto& arrow : activeArrows) {
+        arrow.draw(window);
     }
 }

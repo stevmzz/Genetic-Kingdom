@@ -38,9 +38,9 @@ void Cell::draw(sf::RenderWindow& window) {
         // Color según el nivel
         switch (tower->getLevel()) {
             case 1: levelText.setFillColor(sf::Color::White); break;
-            case 2: levelText.setFillColor(sf::Color::Yellow); break;
-            case 3: levelText.setFillColor(sf::Color::Cyan); break;
-            default: levelText.setFillColor(sf::Color::Magenta); break; // fallback para nivel no esperado
+            case 2: levelText.setFillColor(sf::Color::Magenta); break;
+            case 3: levelText.setFillColor(sf::Color::Red); break;
+            default: levelText.setFillColor(sf::Color::White); break; // fallback para nivel no esperado
         }
 
         levelText.setString("Lv." + std::to_string(tower->getLevel()));
