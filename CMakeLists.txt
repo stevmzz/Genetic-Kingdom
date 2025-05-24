@@ -28,6 +28,9 @@ set(SOURCES
         src/Game/Grid/Cell.cpp
         src/Game/Enemies/Enemy.cpp
         src/Game/Enemies/Ogre.cpp
+        src/Game/Enemies/DarkElves.cpp
+        src/Game/Enemies/Harpy.cpp
+        src/Game/Enemies/Mercenary.cpp
         src/Game/Systems/WaveManager.cpp
         src/Game/Systems/Pathfinding.cpp
         src/Game/Genetics/Chromosome.cpp

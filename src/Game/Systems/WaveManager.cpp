@@ -1,5 +1,8 @@
 #include "../include/Game/Systems/WaveManager.h"
 #include "../include/Game/Enemies/Ogre.h"
+#include "../include/Game/Enemies/DarkElves.h"
+#include "../include/Game/Enemies/Harpy.h"
+#include "../include/Game/Enemies/Mercenary.h"
 #include <random>
 #include <iostream>
 #include <sstream>
@@ -7,9 +10,11 @@
 #include <numeric>
 
 // constructor
-WaveManager::WaveManager(const std::vector<sf::Vector2f>& path, float enemySpawnInterval)
+WaveManager::WaveManager(const std::vector<sf::Vector2f>& path, Grid* grid, const sf::Vector2f& goal, float enemySpawnInterval)
     :   currentWave(0),
         enemyPath(path),
+        gridReference(grid),
+        goalPoint(goal),
         enemySpawnInterval(enemySpawnInterval),
         waveInProgress(false),
         enemiesSpawned(0),
@@ -84,9 +89,37 @@ std::vector<std::unique_ptr<Enemy>> WaveManager::update(float dt) {
             performance.chromosomeIndex = enemiesSpawned % (currentWaveChromosomes.empty() ? 1 : currentWaveChromosomes.size());
             enemyPerformanceData[enemiesSpawned] = performance;
 
-            // crear un ogro con el cromosoma
-            auto enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+            // crear enemigos
+            std::unique_ptr<Enemy> enemy;
+            int enemyType = (currentWave - 1) % 4;  // rotar entre 4 tipos
+
+            switch(enemyType) {
+                case 0:
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 1:
+                    enemy = std::make_unique<DarkElves>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 2:
+                    enemy = std::make_unique<Harpy>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 3:
+                    enemy = std::make_unique<Mercenary>(spawnPosition, enemyPath, chromosome);
+                break;
+                default:
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+            }
+
             enemy->setId(enemiesSpawned);
+
+            // calcular path inicial con A*
+            if (gridReference && enemy) {
+                auto initialPath = Pathfinding::findPath(gridReference, spawnPosition, goalPoint);
+                if (!initialPath.empty()) {
+                    enemy->setPath(initialPath);
+                }
+            }
+
             newEnemies.push_back(std::move(enemy));
 
             // actualizar contadores

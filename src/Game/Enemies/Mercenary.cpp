@@ -18,7 +18,7 @@ Mercenary::Mercenary(const sf::Vector2f& position, const std::vector<sf::Vector2
         std::cerr << "error al cargar imagen: mercenario" << std::endl;
     }
 
-    sprite.setScale(0.3f, 0.3f);
+    sprite.setScale(0.11f, 0.11f);
     sprite.setRotation(0.0f);
 }
 
@@ -36,7 +36,7 @@ Mercenary::Mercenary(const sf::Vector2f& position, const std::vector<sf::Vector2
         std::cerr << "error al cargar imagen: Mercenario" << std::endl;
     }
 
-    sprite.setScale(0.3f, 0.3f);
+    sprite.setScale(0.11f, 0.11f);
     sprite.setRotation(0.0f);
 }
 

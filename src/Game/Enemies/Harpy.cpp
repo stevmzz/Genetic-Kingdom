@@ -18,7 +18,7 @@ Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path
         std::cerr << "error al cargar imagen: harpía" << std::endl;
     }
 
-    sprite.setScale(0.25f, 0.25f); // tamaño proporcional
+    sprite.setScale(0.11f, 0.11f); // tamaño proporcional
     sprite.setRotation(0.0f);
 }
 
@@ -32,11 +32,11 @@ Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path
         HARPY_ARTILLERY_RESISTANCE, // la artillería no puede dañarla, así que no se modifica
         15, position, path) {
 
-    if (!loadTexture("assets/images/enemies/harpy.png")) {
+    if (!loadTexture("assets/images/enemies/Harpy.png")) {
         std::cerr << "error al cargar imagen: harpía" << std::endl;
     }
 
-    sprite.setScale(0.25f, 0.25f);
+    sprite.setScale(0.11f, 0.11f);
     sprite.setRotation(0.0f);
 }
 
