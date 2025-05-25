@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Chromosome.h"
+#include "../include/DataStructures/DynamicArray.h"
 #include <vector>
 #include <random>
 #include <memory>
@@ -9,18 +10,18 @@ class Genetics {
 public:
     Genetics(int populationSize, float mutationRate, float crossoverRate);
     void initializePopulation();
-    void evaluatePopulation(const std::vector<bool>& reachedEnd, const std::vector<float>& distancesTraveled, const std::vector<float>& damagesDealt, const std::vector<float>& timesAlive);
-    std::vector<Chromosome> selectParents();
+    void evaluatePopulation(const DynamicArray<bool>& reachedEnd, const DynamicArray<float>& distancesTraveled, const DynamicArray<float>& damagesDealt, const DynamicArray<float>& timesAlive);
+    DynamicArray<Chromosome> selectParents();
     void createNextGeneration();
     Chromosome getBestChromosome() const;
-    std::vector<Chromosome> getChromosomesForWave(int count);
+    DynamicArray<Chromosome> getChromosomesForWave(int count);
     int getGeneration() const;
     float getAverageFitness() const;
     int getMutationCount() const;
     float getMutationRate() const;
 
 private:
-    std::vector<Chromosome> population;
+    DynamicArray<Chromosome> population;
     int populationSize;
     float mutationRate;
     float crossoverRate;

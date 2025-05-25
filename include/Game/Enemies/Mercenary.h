@@ -5,8 +5,8 @@
 
 class Mercenary : public Enemy {
 public:
-    Mercenary(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path);
-    Mercenary(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome);
+    Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path);
+    Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome);
 
     void update(float dt) override;
     void takeDamage(float amount, const std::string& damageType) override;

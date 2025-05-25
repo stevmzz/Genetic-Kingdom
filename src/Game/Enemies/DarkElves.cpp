@@ -1,5 +1,6 @@
 #include "../include/Game/Enemies/DarkElves.h"
 #include "../include/Game/Systems/Pathfinding.h"
+#include "../include/DataStructures/DynamicArray.h"
 #include <iostream>
 #include <cmath>
 
@@ -11,7 +12,7 @@ const float DARKELF_MAGIC_RESISTANCE = 0.8f;          // resistente a la magia
 const float DARKELF_ARTILLERY_RESISTANCE = 0.2f;      // débil contra artillería
 
 // constructor base
-DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     : Enemy(DARKELF_BASE_HEALTH, DARKELF_BASE_SPEED, DARKELF_ARROW_RESISTANCE, DARKELF_MAGIC_RESISTANCE, DARKELF_ARTILLERY_RESISTANCE, 15, position, path) {
 
     if (!loadTexture("assets/images/enemies/DarkElve.png")) {
@@ -23,7 +24,7 @@ DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2
 }
 
 // constructor con cromosoma (algoritmo genético)
-DarkElves::DarkElves(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome)
+DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
     : Enemy(
         DARKELF_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
         DARKELF_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),

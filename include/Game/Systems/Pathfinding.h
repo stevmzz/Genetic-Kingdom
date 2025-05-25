@@ -2,6 +2,7 @@
 
 #include <SFML/System/Vector2.hpp>
 #include <vector>
+#include "../include/DataStructures/DynamicArray.h"
 #include <queue>
 #include <unordered_set>
 #include <memory>
@@ -37,13 +38,13 @@ private:
     };
 
     static float calculateHeuristic(int r1, int c1, int r2, int c2);
-    static std::vector<std::pair<int, int>> getNeighbors(int row, int col, Grid* grid);
-    static std::vector<sf::Vector2f> reconstructPath(std::shared_ptr<Node> endNode, Grid* grid);
+    static DynamicArray<std::pair<int, int>> getNeighbors(int row, int col, Grid* grid);
+    static DynamicArray<sf::Vector2f> reconstructPath(std::shared_ptr<Node> endNode, Grid* grid);
     static bool isValidCell(int row, int col, Grid* grid);
     static bool isCellWalkable(int row, int col, Grid* grid);
 
 public:
-    static std::vector<sf::Vector2f> findPath(
+    static DynamicArray<sf::Vector2f> findPath(
         Grid* grid,
         const sf::Vector2f& worldStart,
         const sf::Vector2f& worldGoal
@@ -67,14 +68,14 @@ public:
 
     static sf::Vector2f moveAlongPath(
         const sf::Vector2f& currentPosition,
-        const std::vector<sf::Vector2f>& path,
+        const DynamicArray<sf::Vector2f>& path,
         size_t& currentPathIndex,
         float speed,
         float dt,
         float arrivalThreshold = 5.0f
     );
 
-    static bool hasReachedEnd(size_t currentPathIndex, const std::vector<sf::Vector2f>& path);
+    static bool hasReachedEnd(size_t currentPathIndex, const DynamicArray<sf::Vector2f>& path);
     static sf::Vector2f getDirection(const sf::Vector2f& from, const sf::Vector2f& to);
     static float getDistance(const sf::Vector2f& from, const sf::Vector2f& to);
 };

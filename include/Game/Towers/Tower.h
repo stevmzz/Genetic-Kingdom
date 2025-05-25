@@ -8,6 +8,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <memory>
+#include "./DataStructures/DynamicArray.h"
 
 class Enemy; // Forward declaration
 
@@ -31,8 +32,7 @@ public:
     Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown)
         : cost(cost), damage(damage), range(range), attackSpeed(attackSpeed), specialCooldown(specialCooldown) {}
 
-    virtual void attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEnemies) = 0;
-    virtual std::string type() const = 0;
+    virtual void attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allEnemies) = 0;    virtual std::string type() const = 0;
 
     sf::Clock upgradeFlashClock;
     bool recentlyUpgraded = false;

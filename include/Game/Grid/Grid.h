@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "../include/Game/Grid/Cell.h"
+#include "../include/DataStructures/DynamicArray.h"
 
 class Grid {
 public:
@@ -16,10 +17,10 @@ public:
     int getRows() const { return rows; }
     int getCols() const { return cols; }
     float getCellSize() const { return cellSize; }
-    const std::vector<std::vector<Cell>>& getCells() const { return cells; }
+    const DynamicArray<DynamicArray<Cell>>& getCells() const { return cells; }
 
 private:
-    std::vector<std::vector<Cell>> cells;
+    DynamicArray<DynamicArray<Cell>> cells;
     float x, y;
     float cellSize;
     int rows, cols;

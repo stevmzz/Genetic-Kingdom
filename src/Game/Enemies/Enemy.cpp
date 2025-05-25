@@ -6,7 +6,7 @@
 #include "Game/Towers/Tower.h"
 
 // constructor del enemigo
-Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     :   id(-1),
         health(health),
         maxHealth(health),
@@ -33,7 +33,7 @@ Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float ar
 
 
 // constructor basado en cromosoma
-Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     :   id(-1),
         health(chromosome.getHealth()),
         maxHealth(chromosome.getHealth()),
@@ -135,7 +135,7 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 
 
 // establecer un nuevo camino
-void Enemy::setPath(const std::vector<sf::Vector2f>& newPath) {
+void Enemy::setPath(const DynamicArray<sf::Vector2f>& newPath) {
     path = newPath;
     currentPathIndex = 0;
 

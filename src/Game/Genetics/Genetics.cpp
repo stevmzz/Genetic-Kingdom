@@ -30,7 +30,7 @@ void Genetics::initializePopulation() {
 
 
 // evaluar la poblacion actual
-void Genetics::evaluatePopulation(const std::vector<bool> &reachedEnd, const std::vector<float> &distancesTraveled, const std::vector<float> &damagesDealt, const std::vector<float> &timesAlive) {
+void Genetics::evaluatePopulation(const DynamicArray<bool> &reachedEnd, const DynamicArray<float> &distancesTraveled, const DynamicArray<float> &damagesDealt, const DynamicArray<float> &timesAlive) {
     if (reachedEnd.size() != distancesTraveled.size() || reachedEnd.size() != damagesDealt.size() || reachedEnd.size() != timesAlive.size() || reachedEnd.size() != population.size()) {
         return;
     }
@@ -44,8 +44,8 @@ void Genetics::evaluatePopulation(const std::vector<bool> &reachedEnd, const std
 
 
 // seleccionar padres usando seleccion por ruleta
-std::vector<Chromosome> Genetics::selectParents() {
-    std::vector<Chromosome> selectedParents;
+DynamicArray<Chromosome> Genetics::selectParents() {
+    DynamicArray<Chromosome> selectedParents;
 
     // calcular la suma total de fitness
     float totalFitness = 0.0f;
@@ -85,8 +85,8 @@ std::vector<Chromosome> Genetics::selectParents() {
 void Genetics::createNextGeneration() {
     generation++; // incrementar la generacion
     mutationCount = 0; // resetea el contador de mutaciones
-    std::vector<Chromosome> parents = selectParents(); // seleccionar padres
-    std::vector<Chromosome> newPopulation; // crear nueva poblacion
+    DynamicArray<Chromosome> parents = selectParents(); // seleccionar padres
+    DynamicArray<Chromosome> newPopulation; // crear nueva poblacion
 
     // conservar el mejor cromosoma
     Chromosome bestChromosome = getBestChromosome();
@@ -145,8 +145,8 @@ Chromosome Genetics::getBestChromosome() const {
 
 
 // obtener cromosomas para la siguiente oleada
-std::vector<Chromosome> Genetics::getChromosomesForWave(int count) {
-    std::vector<Chromosome> waveChromosomes;
+DynamicArray<Chromosome> Genetics::getChromosomesForWave(int count) {
+    DynamicArray<Chromosome> waveChromosomes;
 
     // si no hay suficientes cromosomas en la poblacion, devolver cromosomas aleatorios
     if (population.empty()) {
@@ -157,7 +157,7 @@ std::vector<Chromosome> Genetics::getChromosomesForWave(int count) {
     }
 
     // ordenar la poblacion por fitness
-    std::vector<Chromosome> sortedPopulation = population;
+    DynamicArray<Chromosome> sortedPopulation = population;
     std::sort(sortedPopulation.begin(), sortedPopulation.end(), [](const Chromosome& a, const Chromosome& b) {
         return a.getFitness() > b.getFitness();
     });
