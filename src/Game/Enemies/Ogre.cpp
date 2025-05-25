@@ -1,5 +1,6 @@
 #include "../include/Game/Enemies/Ogre.h"
 #include "../include/Game/Systems/Pathfinding.h"
+#include "../include/DataStructures/DynamicArray.h"
 #include <iostream>
 #include <cmath>
 
@@ -13,7 +14,7 @@ const float OGRE_ARTILLERY_RESISTANCE = 1.5f;   // recistencia contra la artille
 
 
 // constructor del ogro
-Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     : Enemy(OGRE_BASE_HEALTH, OGRE_BASE_SPEED, OGRE_ARROW_RESISTANCE, OGRE_MAGIC_RESISTANCE, OGRE_ARTILLERY_RESISTANCE, 15, position, path){
 
     // cargar la textura del ogro
@@ -31,7 +32,7 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
 
 
 // constructor con cromosoma
-Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome)
+Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
     : Enemy(
         // ajustar la salud: entre 70%-130% de la salud base del ogro
         OGRE_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
@@ -64,6 +65,7 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, 
 
 // implementacion del metodo update
 void Ogre::update(float dt) {
+    Enemy::update(dt);
     if (!isActive || path.empty() || currentPathIndex >= path.size()) {
         return;
     }
@@ -110,6 +112,21 @@ void Ogre::takeDamage(float amount, const std::string& damageType) {
 
     // reducir la salud
     health -= finalDamage;
+
+    // Crear texto flotante
+    FloatingDamageText damageText;
+    damageText.text.setFont(sharedFont);
+    damageText.text.setCharacterSize(16);
+    damageText.text.setFillColor(sf::Color::Red);
+    damageText.text.setString("-" + std::to_string(static_cast<int>(finalDamage)));
+
+    sf::FloatRect bounds = damageText.text.getLocalBounds();
+    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
+    // Posición encima del enemigo
+    damageText.text.setPosition(position.x, position.y - 60.f);
+
+    floatingTexts.push_back(damageText);
 
     // verificar si el enemigo ha muerto
     if (health <= 0) {

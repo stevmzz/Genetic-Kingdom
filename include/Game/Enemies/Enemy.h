@@ -2,8 +2,10 @@
 
 #include <SFML/Graphics.hpp>
 #include <memory>
-#include <vector>
 #include "../Genetics/Chromosome.h"
+#include "./DataStructures/DynamicArray.h"
+
+class Grid;
 
 class Enemy : public sf::Drawable {
 protected:
@@ -20,7 +22,7 @@ protected:
     sf::Sprite sprite;
     sf::Texture texture;
     bool isActive;
-    std::vector<sf::Vector2f> path;
+    DynamicArray<sf::Vector2f> path;
     size_t currentPathIndex;
     float totalDistanceTraveled;
     sf::Clock lifeTimer;
@@ -34,13 +36,20 @@ public:
         float artilleryRes,
         int goldReward,
         const sf::Vector2f& position,
-        const std::vector<sf::Vector2f>& path);
+        const DynamicArray<sf::Vector2f>& path);
 
     Enemy(
         const Chromosome& chromosome,
         int goldReward,
         const sf::Vector2f& position,
-        const std::vector<sf::Vector2f>& path);
+        const DynamicArray<sf::Vector2f>& path);
+
+    struct FloatingDamageText {
+        sf::Text text;
+        sf::Clock timer;
+    };
+
+    std::vector<FloatingDamageText> floatingTexts;
 
     virtual ~Enemy() = default;
 
@@ -52,11 +61,14 @@ public:
     int getGoldReward() const;
     sf::Vector2f getPosition() const;
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-    void setPath(const std::vector<sf::Vector2f>& newPath);
+    void setPath(const DynamicArray<sf::Vector2f>& newPath);
     bool loadTexture(const std::string& filename);
     void setId(int id);
     int getId() const;
     float getTotalDistanceTraveled() const;
     float getTimeAlive() const;
     void receiveDamage(float damage);
+    inline static sf::Font sharedFont;
+    static void setSharedFont(const sf::Font& font);
+    void recalculatePath(Grid* grid, const sf::Vector2f& goal);
 };

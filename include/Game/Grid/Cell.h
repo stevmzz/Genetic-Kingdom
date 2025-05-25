@@ -6,6 +6,9 @@
 
 class Cell {
 public:
+    Cell() : selected(false), pathCell(false), tower(nullptr) {
+        shape.setSize(sf::Vector2f(0, 0));
+    }
     Cell(float x, float y, float size);
     void draw(sf::RenderWindow& window);
     bool contains(float x, float y) const;

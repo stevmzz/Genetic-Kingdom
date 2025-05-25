@@ -1,5 +1,8 @@
 #include "../include/Game/Systems/WaveManager.h"
 #include "../include/Game/Enemies/Ogre.h"
+#include "../include/Game/Enemies/DarkElves.h"
+#include "../include/Game/Enemies/Harpy.h"
+#include "../include/Game/Enemies/Mercenary.h"
 #include <random>
 #include <iostream>
 #include <sstream>
@@ -7,9 +10,11 @@
 #include <numeric>
 
 // constructor
-WaveManager::WaveManager(const std::vector<sf::Vector2f>& path, float enemySpawnInterval)
+WaveManager::WaveManager(const DynamicArray<sf::Vector2f>& path, Grid* grid, const sf::Vector2f& goal, float enemySpawnInterval)
     :   currentWave(0),
         enemyPath(path),
+        gridReference(grid),
+        goalPoint(goal),
         enemySpawnInterval(enemySpawnInterval),
         waveInProgress(false),
         enemiesSpawned(0),
@@ -49,8 +54,8 @@ void WaveManager::calculatePathLength() {
 
 
 // actualizar el estado del gestor de oleadas
-std::vector<std::unique_ptr<Enemy>> WaveManager::update(float dt) {
-    std::vector<std::unique_ptr<Enemy>> newEnemies;
+DynamicArray<std::unique_ptr<Enemy>> WaveManager::update(float dt) {
+    DynamicArray<std::unique_ptr<Enemy>> newEnemies;
 
     // si hay una oleada en curso, generar enemigos segun el intervalo
     if (waveInProgress && enemiesRemaining > 0) {
@@ -84,9 +89,37 @@ std::vector<std::unique_ptr<Enemy>> WaveManager::update(float dt) {
             performance.chromosomeIndex = enemiesSpawned % (currentWaveChromosomes.empty() ? 1 : currentWaveChromosomes.size());
             enemyPerformanceData[enemiesSpawned] = performance;
 
-            // crear un ogro con el cromosoma
-            auto enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+            // crear enemigos
+            std::unique_ptr<Enemy> enemy;
+            int enemyType = (currentWave - 1) % 4;  // rotar entre 4 tipos
+
+            switch(enemyType) {
+                case 0:
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 1:
+                    enemy = std::make_unique<DarkElves>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 2:
+                    enemy = std::make_unique<Harpy>(spawnPosition, enemyPath, chromosome);
+                break;
+                case 3:
+                    enemy = std::make_unique<Mercenary>(spawnPosition, enemyPath, chromosome);
+                break;
+                default:
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+            }
+
             enemy->setId(enemiesSpawned);
+
+            // calcular path inicial con A*
+            if (gridReference && enemy) {
+                auto initialPath = Pathfinding::findPath(gridReference, spawnPosition, goalPoint);
+                if (!initialPath.empty()) {
+                    enemy->setPath(initialPath);
+                }
+            }
+
             newEnemies.push_back(std::move(enemy));
 
             // actualizar contadores
@@ -159,7 +192,7 @@ void WaveManager::startNextWave() {
 
 
 // establecer cromosomas para la siguiente oleada
-void WaveManager::setWaveChromosomes(const std::vector<Chromosome>& chromosomes) {
+void WaveManager::setWaveChromosomes(const DynamicArray<Chromosome>& chromosomes) {
     currentWaveChromosomes = chromosomes;
 }
 
@@ -181,7 +214,7 @@ void WaveManager::trackEnemyPerformance(int enemyId, bool reachedEnd, float dist
 // calcular la cantidad de enemigos para la siguiente oleada
 void WaveManager::calculateNextWaveEnemyCount() {
     // recopilar datos sobre el progreso de los enemigos
-    std::vector<float> progressValues;
+    DynamicArray<float> progressValues;
     float maxProgress = 0.0f;
     float totalProgress = 0.0f;
 
@@ -253,8 +286,8 @@ void WaveManager::setPathTotalLength(float length) {
 
 
 // obtener datos para evaluación genética:
-std::vector<bool> WaveManager::getEnemiesReachedEnd() const {
-    std::vector<bool> result;
+DynamicArray<bool> WaveManager::getEnemiesReachedEnd() const {
+    DynamicArray<bool> result;
     for (const auto& [id, data] : enemyPerformanceData) {
         result.push_back(data.reachedEnd);
 
@@ -262,16 +295,16 @@ std::vector<bool> WaveManager::getEnemiesReachedEnd() const {
     return result;
 }
 
-std::vector<float> WaveManager::getDistancesTraveled() const {
-    std::vector<float> result;
+DynamicArray<float> WaveManager::getDistancesTraveled() const {
+    DynamicArray<float> result;
     for (const auto& [id, data] : enemyPerformanceData) {
         result.push_back(data.distanceTraveled);
     }
     return result;
 }
 
-std::vector<float> WaveManager::getTimesAlive() const {
-    std::vector<float> result;
+DynamicArray<float> WaveManager::getTimesAlive() const {
+    DynamicArray<float> result;
     for (const auto& [id, data] : enemyPerformanceData) {
         result.push_back(data.timeAlive);
     }

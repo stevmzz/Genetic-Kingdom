@@ -8,6 +8,11 @@
 #include "Game/Towers/Archer.h"
 #include "Game/Towers/Mage.h"
 #include "Game/Towers/Gunner.h"
+#include "../include/Game/Systems/Pathfinding.h"
+#include "Game/Enemies/Ogre.h"
+#include "Game/Enemies/DarkElves.h"
+#include "Game/Enemies/Harpy.h"
+#include "Game/Enemies/Mercenary.h"
 
 //Incluye la clase del panel de estadisticas
 #include "../include/UI/StatsPanel.h"
@@ -44,8 +49,8 @@ void GameplayState::init() {
     float gridY = (window.getSize().y - GRID_ROWS * CELL_SIZE) / 2;
     gameGrid = std::make_unique<Grid>(gridX, gridY, GRID_ROWS, GRID_COLS, CELL_SIZE);
 
-    // crear un camino de prueba para los enemigos
-    createTestPath();
+    // inicializar puntos de spawn y objetivo
+    initializeSpawnAndGoalPoints();
 
     // texto que avisa al jugador si no tiene suficiente dinero
     // siempre esta ahi, solo se muestra cuando es necesario
@@ -62,14 +67,20 @@ void GameplayState::init() {
     // font para celdas de las torres
     Tower::setSharedFont(game->getFont());
 
+    // Font para dano encima de enemigos
+    Enemy::setSharedFont(game->getFont());
+
     // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
     geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
 
-    // inicializar el gestor de oleadas (camino, intervalo entre enemigos)
-    waveManager = std::make_unique<WaveManager>(testPath, 1.5f);
+    // crear un path inicial para calcular la longitud total
+    auto initialPath = Pathfinding::findPath(gameGrid.get(), spawnPoint, goalPoint);
+
+    // inicializar el gestor de oleadas
+    waveManager = std::make_unique<WaveManager>(initialPath, gameGrid.get(), goalPoint, 1.5f);
 
     // preparar cromosomas para la primera oleada
-    std::vector<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
+    DynamicArray<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
     waveManager->setWaveChromosomes(firstWaveChromosomes);
 
     // iniciar la primera oleada automaticamente
@@ -82,9 +93,8 @@ void GameplayState::init() {
 
 
 
-// crea un camino de prueba para los enemigos
-void GameplayState::createTestPath() {
-    // obtener informacion de la cuadricula
+// inicializa el punto de entrada y salida
+void GameplayState::initializeSpawnAndGoalPoints() {
     float gridStartX = gameGrid->getX();
     float gridStartY = gameGrid->getY();
     int rows = gameGrid->getRows();
@@ -95,45 +105,53 @@ void GameplayState::createTestPath() {
     int middleRow = rows / 2;
 
     // punto de entrada (borde izquierdo, fila central)
-    sf::Vector2f entryPoint(gridStartX - cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
+    spawnPoint = sf::Vector2f(gridStartX - cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
 
     // punto de salida (borde derecho, fila central)
-    sf::Vector2f exitPoint(gridStartX + cols * cellSize + cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
+    goalPoint = sf::Vector2f(gridStartX + (cols + 1) * cellSize + cellSize / 2, gridStartY + middleRow * cellSize + cellSize / 2);
+}
 
-    // limpiar el camino anterior
-    testPath.clear();
 
-    // añadir punto de entrada
-    testPath.push_back(entryPoint);
 
-    // añadir puntos a lo largo del camino recto
-    for (int i = 0; i <= cols; i++) {
-        sf::Vector2f pathPoint(gridStartX + i * cellSize, gridStartY + middleRow * cellSize + cellSize/2);
-        testPath.push_back(pathPoint);
+
+// verificar si se puede colocar una torre
+bool GameplayState::canPlaceTowerAt(Cell* cell) {
+    if (!cell || cell->hasTower()) {
+        return false;
     }
 
-    // añadir punto de salida
-    testPath.push_back(exitPoint);
+    // temporalmente "colocar" una torre para verificar
+    cell->placeTower(std::make_shared<Archer>());
 
-    // marcar las celdas del camino como no disponibles para colocar torres
-    for (int i = 0; i < cols; i++) {
-        Cell* pathCell = gameGrid->getCellAt(middleRow, i);
-        if (pathCell) {
-            pathCell->setIsPath(true);
+    // verificar que todavía existe un camino
+    bool hasPath = Pathfinding::hasValidPath(gameGrid.get(), spawnPoint, goalPoint);
+
+    // verificar enemigos activos
+    if (hasPath) {
+        for (const auto& enemy : enemies) {
+            if (enemy->isAlive()) {
+                auto enemyPath = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
+                if (enemyPath.empty()) {
+                    hasPath = false;
+                    break;
+                }
+            }
         }
     }
 
-    // calcular la longitud total del camino y pasarla al WaveManager
-    float totalLength = 0.0f;
-    if (testPath.size() > 1) {
-        for (size_t i = 0; i < testPath.size() - 1; i++) {
-            sf::Vector2f segment = testPath[i+1] - testPath[i];
-            totalLength += std::sqrt(segment.x * segment.x + segment.y * segment.y);
-        }
-    }
+    // remover la torre temporal
+    cell->placeTower(nullptr);
+    return hasPath;
+}
 
-    if (waveManager) {
-        waveManager->setPathTotalLength(totalLength);
+
+
+// recalcular paths de enemigos
+void GameplayState::recalculateEnemyPaths() {
+    for (auto& enemy : enemies) {
+        if (enemy->isAlive()) {
+            enemy->recalculatePath(gameGrid.get(), goalPoint);
+        }
     }
 }
 
@@ -270,6 +288,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         if (playerGold >= tower->getCost()) {
                             selectedCellForPlacement->placeTower(tower);
                             playerGold -= tower->getCost();
+                            recalculateEnemyPaths();
                         } else {
                             showGoldWarning = true;
                             goldWarningClock.restart();
@@ -398,8 +417,13 @@ void GameplayState::update(float dt) {
     // actualizar el gestor de oleadas
     auto newEnemies = waveManager->update(dt);
 
-    // añadir los nuevos enemigos a la lista
+    // añadir los nuevos enemigos a la lista con paths calculados
     for (auto& enemy : newEnemies) {
+        // calcular el path inicial para el enemigo
+        auto path = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
+        if (!path.empty()) {
+            enemy->setPath(path);
+        }
         enemies.push_back(std::move(enemy));
     }
 
@@ -423,8 +447,9 @@ void GameplayState::update(float dt) {
             enemiesKilled++;
 
             // eliminar el enemigo de la lista
-            it = enemies.erase(it);
-        }
+            size_t index = it - enemies.begin();
+            enemies.erase(index);
+            it = enemies.begin() + index;        }
 
         else if ((*it)->hasReachedEnd()) {
             gameOver = true;
@@ -437,7 +462,7 @@ void GameplayState::update(float dt) {
     }
 
     // Hace que las torres ataquen los enemigos
-    handleTowerAttacks();
+    handleTowerAttacks(dt);
 
     // si el juego no ha terminado, comprobar si la oleada ha terminado
     if (!gameOver) {
@@ -479,12 +504,16 @@ void GameplayState::update(float dt) {
 // prepara la siguiente generacion usando el sistema genetico
 void GameplayState::prepareNextGeneration() {
     // obtener datos de la oleada anterior
-    std::vector<bool> reachedEnd = waveManager->getEnemiesReachedEnd();
-    std::vector<float> distancesTraveled = waveManager->getDistancesTraveled();
-    std::vector<float> timesAlive = waveManager->getTimesAlive();
+    DynamicArray<bool> reachedEnd = waveManager->getEnemiesReachedEnd();
+    DynamicArray<float> distancesTraveled = waveManager->getDistancesTraveled();
+    DynamicArray<float> timesAlive = waveManager->getTimesAlive();
 
     // creamos un vector de ceros con el mismo tamaño
-    std::vector<float> damagesDealt(reachedEnd.size(), 0.0f);
+    DynamicArray<float> damagesDealt;
+    damagesDealt.resize(reachedEnd.size());
+    for (size_t i = 0; i < reachedEnd.size(); i++) {
+        damagesDealt[i] = 0.0f;
+    }
 
     // evaluar la población
     geneticsSystem->evaluatePopulation(reachedEnd, distancesTraveled, damagesDealt, timesAlive);
@@ -493,7 +522,7 @@ void GameplayState::prepareNextGeneration() {
     geneticsSystem->createNextGeneration();
 
     // obtener cromosomas para la siguiente oleada
-    std::vector<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(waveManager->getEnemiesPerWave());
+    DynamicArray<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(waveManager->getEnemiesPerWave());
 
     // configurar el WaveManager con los nuevos cromosomas
     waveManager->setWaveChromosomes(nextWaveChromosomes);
@@ -512,6 +541,24 @@ void GameplayState::render(sf::RenderWindow& window) {
     // dibujar la cuadricula
     if (gameGrid) {
         gameGrid->draw(window);
+    }
+
+    // dibujar proyectiles de torres
+    for (const auto& row : gameGrid->getCells()) {
+        for (const auto& cell : row) {
+            if (cell.hasTower()) {
+                auto tower = cell.getTower();
+                if (tower->type() == "Archer") {
+                    std::dynamic_pointer_cast<Archer>(tower)->drawProjectiles(window);
+                }
+                if (tower->type() == "Mage") {
+                    std::dynamic_pointer_cast<Mage>(tower)->drawProjectiles(window);
+                }
+                if (tower->type() == "Gunner") {
+                    std::dynamic_pointer_cast<Gunner>(tower)->drawProjectiles(window);
+                }
+            }
+        }
     }
 
     // dibujar enemigos
@@ -608,13 +655,23 @@ void GameplayState::cleanup() {
     geneticsSystem.reset();
 }
 
-void GameplayState::handleTowerAttacks() {
+void GameplayState::handleTowerAttacks(float dt) {
     const auto& cellGrid = gameGrid->getCells(); // get 2D vector of cells
 
     for (const auto& row : cellGrid) {
         for (const auto& cell : row) {
             if (cell.hasTower()) {
                 auto tower = cell.getTower();
+
+                if (tower->type() == "Archer") {
+                    std::dynamic_pointer_cast<Archer>(tower)->updateProjectiles(dt);
+                }
+                if (tower->type() == "Mage") {
+                    std::dynamic_pointer_cast<Mage>(tower)->updateProjectiles(dt);
+                }
+                if (tower->type() == "Gunner") {
+                    std::dynamic_pointer_cast<Gunner>(tower)->updateProjectiles(dt);
+                }
 
                 for (const auto& enemyPtr : enemies) {
                     if (enemyPtr->isAlive()) {

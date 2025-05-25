@@ -28,6 +28,9 @@ set(SOURCES
         src/Game/Grid/Cell.cpp
         src/Game/Enemies/Enemy.cpp
         src/Game/Enemies/Ogre.cpp
+        src/Game/Enemies/DarkElves.cpp
+        src/Game/Enemies/Harpy.cpp
+        src/Game/Enemies/Mercenary.cpp
         src/Game/Systems/WaveManager.cpp
         src/Game/Systems/Pathfinding.cpp
         src/Game/Genetics/Chromosome.cpp
@@ -40,6 +43,12 @@ set(SOURCES
         src/Game/Towers/Gunner.cpp
         src/Game/Towers/Mage.cpp
         src/UI/StatsPanel.cpp
+        include/Effects/Arrow.h
+        src/Effects/Arrow.cpp
+        include/Effects/Fireball.h
+        src/Effects/Fireball.cpp
+        include/Effects/Cannonball.h
+        src/Effects/Cannonball.cpp
 )
 
 # Crea el ejecutable
