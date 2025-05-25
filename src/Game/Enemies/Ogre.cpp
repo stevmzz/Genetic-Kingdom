@@ -1,5 +1,6 @@
 #include "../include/Game/Enemies/Ogre.h"
 #include "../include/Game/Systems/Pathfinding.h"
+#include "../include/DataStructures/DynamicArray.h"
 #include <iostream>
 #include <cmath>
 
@@ -13,7 +14,7 @@ const float OGRE_ARTILLERY_RESISTANCE = 1.5f;   // recistencia contra la artille
 
 
 // constructor del ogro
-Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     : Enemy(OGRE_BASE_HEALTH, OGRE_BASE_SPEED, OGRE_ARROW_RESISTANCE, OGRE_MAGIC_RESISTANCE, OGRE_ARTILLERY_RESISTANCE, 15, position, path){
 
     // cargar la textura del ogro
@@ -31,7 +32,7 @@ Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
 
 
 // constructor con cromosoma
-Ogre::Ogre(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome)
+Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
     : Enemy(
         // ajustar la salud: entre 70%-130% de la salud base del ogro
         OGRE_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),

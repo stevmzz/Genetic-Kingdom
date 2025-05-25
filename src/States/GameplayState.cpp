@@ -76,7 +76,7 @@ void GameplayState::init() {
     waveManager = std::make_unique<WaveManager>(initialPath, gameGrid.get(), goalPoint, 1.5f);
 
     // preparar cromosomas para la primera oleada
-    std::vector<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
+    DynamicArray<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
     waveManager->setWaveChromosomes(firstWaveChromosomes);
 
     // iniciar la primera oleada automaticamente
@@ -439,8 +439,9 @@ void GameplayState::update(float dt) {
             enemiesKilled++;
 
             // eliminar el enemigo de la lista
-            it = enemies.erase(it);
-        }
+            size_t index = it - enemies.begin();
+            enemies.erase(index);
+            it = enemies.begin() + index;        }
 
         else if ((*it)->hasReachedEnd()) {
             gameOver = true;
@@ -468,12 +469,16 @@ void GameplayState::update(float dt) {
 // prepara la siguiente generacion usando el sistema genetico
 void GameplayState::prepareNextGeneration() {
     // obtener datos de la oleada anterior
-    std::vector<bool> reachedEnd = waveManager->getEnemiesReachedEnd();
-    std::vector<float> distancesTraveled = waveManager->getDistancesTraveled();
-    std::vector<float> timesAlive = waveManager->getTimesAlive();
+    DynamicArray<bool> reachedEnd = waveManager->getEnemiesReachedEnd();
+    DynamicArray<float> distancesTraveled = waveManager->getDistancesTraveled();
+    DynamicArray<float> timesAlive = waveManager->getTimesAlive();
 
     // creamos un vector de ceros con el mismo tamaño
-    std::vector<float> damagesDealt(reachedEnd.size(), 0.0f);
+    DynamicArray<float> damagesDealt;
+    damagesDealt.resize(reachedEnd.size());
+    for (size_t i = 0; i < reachedEnd.size(); i++) {
+        damagesDealt[i] = 0.0f;
+    }
 
     // evaluar la población
     geneticsSystem->evaluatePopulation(reachedEnd, distancesTraveled, damagesDealt, timesAlive);
@@ -482,7 +487,7 @@ void GameplayState::prepareNextGeneration() {
     geneticsSystem->createNextGeneration();
 
     // obtener cromosomas para la siguiente oleada
-    std::vector<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(waveManager->getEnemiesPerWave());
+    DynamicArray<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(waveManager->getEnemiesPerWave());
 
     // configurar el WaveManager con los nuevos cromosomas
     waveManager->setWaveChromosomes(nextWaveChromosomes);

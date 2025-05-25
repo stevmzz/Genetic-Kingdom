@@ -28,7 +28,7 @@ Gunner::Gunner() : Tower(
     sprite.setScale(scaleFactor, scaleFactor);
 }
 
-void Gunner::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
+void Gunner::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.takeDamage(damage, "artillery");

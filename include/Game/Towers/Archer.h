@@ -13,7 +13,7 @@
 class Archer : public Tower {
 public:
     Archer();
-    void attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) override;
+    void attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) override;
     std::string type() const override { return "Archer"; }
     int getUpgradeCost() const override;
     void upgrade() override;

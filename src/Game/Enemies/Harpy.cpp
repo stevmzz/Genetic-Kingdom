@@ -1,5 +1,6 @@
 #include "../include/Game/Enemies/Harpy.h"
 #include "../include/Game/Systems/Pathfinding.h"
+#include "../include/DataStructures/DynamicArray.h"
 #include <iostream>
 #include <cmath>
 
@@ -11,7 +12,7 @@ const float HARPY_MAGIC_RESISTANCE = 0.3f;           // poca resistencia a magia
 const float HARPY_ARTILLERY_RESISTANCE = 1.0f;       // inmunidad: no se puede atacar con artillería
 
 // constructor normal
-Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path)
+Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     : Enemy(HARPY_BASE_HEALTH, HARPY_BASE_SPEED, HARPY_ARROW_RESISTANCE, HARPY_MAGIC_RESISTANCE, HARPY_ARTILLERY_RESISTANCE, 15, position, path) {
 
     if (!loadTexture("assets/images/enemies/Harpy.png")) {
@@ -23,7 +24,7 @@ Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path
 }
 
 // constructor con cromosoma
-Harpy::Harpy(const sf::Vector2f& position, const std::vector<sf::Vector2f>& path, const Chromosome& chromosome)
+Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
     : Enemy(
         HARPY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
         HARPY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),

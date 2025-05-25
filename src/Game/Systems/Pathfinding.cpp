@@ -37,8 +37,8 @@ bool Pathfinding::isCellWalkable(int row, int col, Grid* grid) {
 
 
 // obtiene los vecinos validos de una celda (8 direcciones)
-std::vector<std::pair<int, int>> Pathfinding::getNeighbors(int row, int col, Grid* grid) {
-    std::vector<std::pair<int, int>> neighbors;
+DynamicArray<std::pair<int, int>> Pathfinding::getNeighbors(int row, int col, Grid* grid) {
+    DynamicArray<std::pair<int, int>> neighbors;
 
     // 8 direcciones: arriba, abajo, izquierda, derecha y diagonales
     const int dr[] = {-1, -1, -1,  0, 0,  1, 1, 1};
@@ -102,8 +102,8 @@ sf::Vector2f Pathfinding::gridToWorld(int row, int col, Grid* grid) {
 
 
 // reconstruye el camino desde el nodo final hasta el inicial
-std::vector<sf::Vector2f> Pathfinding::reconstructPath(std::shared_ptr<Node> endNode, Grid* grid) {
-    std::vector<sf::Vector2f> path;
+DynamicArray<sf::Vector2f> Pathfinding::reconstructPath(std::shared_ptr<Node> endNode, Grid* grid) {
+    DynamicArray<sf::Vector2f> path;
 
     std::shared_ptr<Node> current = endNode;
     while (current != nullptr) {
@@ -122,7 +122,7 @@ std::vector<sf::Vector2f> Pathfinding::reconstructPath(std::shared_ptr<Node> end
 
 
 // implementacion principal del algoritmo a*
-std::vector<sf::Vector2f> Pathfinding::findPath(Grid* grid, const sf::Vector2f& worldStart, const sf::Vector2f& worldGoal) {
+DynamicArray<sf::Vector2f> Pathfinding::findPath(Grid* grid, const sf::Vector2f& worldStart, const sf::Vector2f& worldGoal) {
     // convertir coordenadas del mundo a indices del grid
     auto [startRow, startCol] = worldToGrid(worldStart, grid);
     auto [goalRow, goalCol] = worldToGrid(worldGoal, grid);
@@ -247,7 +247,7 @@ bool Pathfinding::hasValidPath(Grid* grid, const sf::Vector2f& worldStart, const
 // metodos legacy para compatibilidad
 sf::Vector2f Pathfinding::moveAlongPath(
     const sf::Vector2f& currentPosition,
-    const std::vector<sf::Vector2f>& path,
+    const DynamicArray<sf::Vector2f>& path,
     size_t& currentPathIndex,
     float speed,
     float dt,
@@ -278,7 +278,7 @@ sf::Vector2f Pathfinding::moveAlongPath(
 
 
 // verifica si ha llegado al final del camino
-bool Pathfinding::hasReachedEnd(size_t currentPathIndex, const std::vector<sf::Vector2f>& path) {
+bool Pathfinding::hasReachedEnd(size_t currentPathIndex, const DynamicArray<sf::Vector2f>& path) {
     return currentPathIndex >= path.size() - 1;
 }
 

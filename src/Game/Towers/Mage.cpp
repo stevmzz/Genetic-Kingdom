@@ -26,7 +26,7 @@ Mage::Mage() : Tower(
     sprite.setScale(scaleFactor, scaleFactor);
 }
 
-void Mage::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>& allEnemies) {
+void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allEnemies) {
     float elapsed = attackClock.getElapsedTime().asSeconds();
 
     // ataque normal

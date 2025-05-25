@@ -29,7 +29,7 @@ Archer::Archer() : Tower(
 
 }
 
-void Archer::attack(Enemy& enemy, const std::vector<std::unique_ptr<Enemy>>&) {
+void Archer::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
     // ataque normal
     float elapsed = attackClock.getElapsedTime().asSeconds();
     if (elapsed >= 1.0f / attackSpeed) {
