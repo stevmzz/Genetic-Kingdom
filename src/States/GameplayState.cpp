@@ -9,6 +9,10 @@
 #include "Game/Towers/Mage.h"
 #include "Game/Towers/Gunner.h"
 
+//Incluye la clase del panel de estadisticas
+#include "../include/UI/StatsPanel.h"
+
+
 // constructor del estado de juego
 GameplayState::GameplayState()
     :   enemiesKilled(0),
@@ -70,6 +74,10 @@ void GameplayState::init() {
 
     // iniciar la primera oleada automaticamente
     waveManager->startNextWave();
+
+    // inicializar el panel de estadísticas
+    statsPanel = std::make_unique<StatsPanel>(game->getFont());
+
 }
 
 
@@ -437,6 +445,33 @@ void GameplayState::update(float dt) {
             prepareNextGeneration();
         }
     }
+
+    //Declara como el panel de estadisticas se va actualizando durante la partida
+    std::vector<float> fitnessList = geneticsSystem->getCurrentFitnessScores();
+    std::vector<int> towerLevels;
+
+    const auto& cells = gameGrid->getCells();
+    for (const auto& row : cells) {
+        for (const auto& cell : row) {
+            if (cell.hasTower()) {
+                towerLevels.push_back(cell.getTower()->getLevel());
+            }
+        }
+    }
+
+    statsPanel->update(
+        geneticsSystem->getGenerationCount(),
+        enemiesKilled,
+        fitnessList,
+        towerLevels,
+        geneticsSystem->getMutationRate(),
+        geneticsSystem->getMutationCount()
+    );
+
+    if (gameOver) {
+        statsPanel->setVisible(false);
+    }
+
 }
 
 
@@ -559,6 +594,10 @@ void GameplayState::render(sf::RenderWindow& window) {
 
     window.draw(goldText);
 
+    //Dibujar el panel de estadisticas
+    if (statsPanel) {
+        statsPanel->draw(window);
+    }
 }
 
 // libera recursos si es necesario cuando se sale del estado

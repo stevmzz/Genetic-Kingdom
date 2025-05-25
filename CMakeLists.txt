@@ -39,6 +39,7 @@ set(SOURCES
         src/Game/Towers/Archer.cpp
         src/Game/Towers/Gunner.cpp
         src/Game/Towers/Mage.cpp
+        src/UI/StatsPanel.cpp
 )
 
 # Crea el ejecutable

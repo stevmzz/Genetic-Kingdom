@@ -37,6 +37,10 @@ private:
     sf::Text upgradeGoldText;
     bool showUpgradeGoldText = false;
 
+    //Variable para el panel de estadisticas
+    std::unique_ptr<StatsPanel> statsPanel;
+
+
 public:
     GameplayState();
     ~GameplayState();
