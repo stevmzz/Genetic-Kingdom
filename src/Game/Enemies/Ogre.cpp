@@ -5,17 +5,17 @@
 #include <cmath>
 
 // valores del ogro
-const float OGRE_BASE_HEALTH = 200.0f;          // vida del ogro
-const float OGRE_BASE_SPEED = 50.0f;            // velocidad baja del ogro
-const float OGRE_ARROW_RESISTANCE = 0.7f;       // recistencia a flechas
-const float OGRE_MAGIC_RESISTANCE = 1.5f;       // recistencia contra la magia
-const float OGRE_ARTILLERY_RESISTANCE = 1.5f;   // recistencia contra la artillería
+const float OGRE_BASE_HEALTH = 150.0f;          // vida del ogro
+const float OGRE_BASE_SPEED = 45.0f;            // velocidad baja del ogro
+const float OGRE_ARROW_RESISTANCE = 0.6f;       // recistencia a flechas
+const float OGRE_MAGIC_RESISTANCE = 1.3f;       // recistencia contra la magia
+const float OGRE_ARTILLERY_RESISTANCE = 1.3f;   // recistencia contra la artillería
 
 
 
 // constructor del ogro
 Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
-    : Enemy(OGRE_BASE_HEALTH, OGRE_BASE_SPEED, OGRE_ARROW_RESISTANCE, OGRE_MAGIC_RESISTANCE, OGRE_ARTILLERY_RESISTANCE, 15, position, path){
+    : Enemy(OGRE_BASE_HEALTH, OGRE_BASE_SPEED, OGRE_ARROW_RESISTANCE, OGRE_MAGIC_RESISTANCE, OGRE_ARTILLERY_RESISTANCE, 25, position, path){
 
     // cargar la textura del ogro
     if (!loadTexture("assets/images/enemies/ogre.png")) {

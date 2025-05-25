@@ -6,11 +6,11 @@
 #include "Game/Enemies/Enemy.h"
 
 Mage::Mage() : Tower(
-    100, // cost
-    50, // damage
-    220.0f, // range
-    1.0f, // attack speed
-    6.0f // special cooldown
+    120, // cost
+    60, // damage
+    200.0f, // range
+    1.2f, // attack speed
+    7.0f // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Mage.png");
     sprite.setTexture(texture);
@@ -77,16 +77,16 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
 }
 
 int Mage::getUpgradeCost() const {
-    return 75 + (level * 75); // Nivel 1→150, 2→225
+    return 80 + (level * 60); // Nivel 1→150, 2→225
 }
 
 void Mage::upgrade() {
     if (canUpgrade()) {
         level++;
-        damage += 15;            // mejora moderada
-        range += 25.0f;          // rango estable
-        attackSpeed += 0.15f;    // mejora ligera en velocidad
-        specialCooldown -= 0.3f; // ataque especial más frecuente
+        damage += 18;            // mejora moderada
+        range += 20.0f;          // rango estable
+        attackSpeed += 0.12f;    // mejora ligera en velocidad
+        specialCooldown -= 0.2f; // ataque especial más frecuente
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

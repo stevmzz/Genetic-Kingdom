@@ -18,7 +18,8 @@
 GameplayState::GameplayState()
     :   enemiesKilled(0),
         gameOver(false),
-        selectedTowerType(TowerType::Archer){
+        selectedTowerType(TowerType::Archer),
+        musicPaused(false) {
 }
 
 
@@ -37,8 +38,17 @@ void GameplayState::init() {
     // pone el cursor visible
     game->getWindow().setMouseCursorVisible(true);
 
+    // cargar sonidos del juego
+    loadGameplaySounds();
+
+    // iniciar musica
+    startGameplayMusic();
+
     // detener la musica del menu
     game->getAudioSystem().stopAllMusic();
+
+    // cargar fondo
+    loadBackgroundTexture();
 
     // inicializar la cuadricula centrada en la pantalla
     float gridX = (window.getSize().x - GRID_COLS * CELL_SIZE) / 2;
@@ -81,6 +91,99 @@ void GameplayState::init() {
 
     // iniciar la primera oleada automaticamente
     waveManager->startNextWave();
+}
+
+
+
+
+// metodo para cargar sonidos
+void GameplayState::loadGameplaySounds() {
+
+    // sonido de muerte de enemigos
+    if (!game->getAudioSystem().loadSound("death", "assets/audio/death.wav")) {
+        std::cerr << "error: no se pudo cargar death.mp3" << std::endl;
+    }
+
+    // sonido de colocacion de torre
+    if (!game->getAudioSystem().loadSound("colocarTorre", "assets/audio/colocarTorre.wav")) {
+        std::cerr << "error: no se pudo cargar colocarTorre.mp3" << std::endl;
+    }
+
+    // sonido de upgrade de torre
+    if (!game->getAudioSystem().loadSound("upgrade", "assets/audio/upgrade.mp3")) {
+        std::cerr << "error: no se pudo cargar upgrade.mp3" << std::endl;
+    }
+}
+
+
+
+// metodo para iniciar la musica de fondo
+void GameplayState::startGameplayMusic() {
+    std::cout << "Iniciando música de gameplay..." << std::endl;
+
+    if (!game->getAudioSystem().playMusicIfNotPlaying("assets/audio/gameplay-theme.mp3", true)) {
+        std::cerr << "error: no se pudo cargar gameplay-theme.mp3" << std::endl;
+    }
+}
+
+
+
+// pausar musica
+void GameplayState::pauseMusic() {
+    if (!musicPaused) {
+        game->getAudioSystem().stopAllMusic();
+        musicPaused = true;
+    }
+}
+
+
+
+// continuar musica
+void GameplayState::resumeMusic() {
+    if (musicPaused) {
+        startGameplayMusic();
+        musicPaused = false;
+        std::cout << "Música reanudada" << std::endl;
+    }
+}
+
+
+
+// parar musica
+void GameplayState::stopMusic() {
+    game->getAudioSystem().stopAllMusic();
+    musicPaused = false;
+    std::cout << "Música detenida" << std::endl;
+}
+
+
+
+// cargar fondo
+bool GameplayState::loadBackgroundTexture() {
+    auto& window = game->getWindow();
+    greenBackground.setSize(sf::Vector2f(window.getSize().x, window.getSize().y));
+    greenBackground.setFillColor(sf::Color(34, 139, 34)); // Verde bosque
+
+    if (!backgroundTexture.loadFromFile("assets/images/backgrounds/backgroundGame.png")) {
+        std::cerr << "error: No se pudo cargar gameplay_background.png" << std::endl;
+        backgroundLoaded = false;
+        return false;
+    }
+
+    // configurar el sprite del fondo png
+    backgroundSprite.setTexture(backgroundTexture);
+
+    // obtener tamaños
+    sf::Vector2u windowSize = window.getSize();
+    sf::Vector2u textureSize = backgroundTexture.getSize();
+
+    // escalar para cubrir toda la pantalla
+    float scaleX = static_cast<float>(windowSize.x) / textureSize.x;
+    float scaleY = static_cast<float>(windowSize.y) / textureSize.y;
+    backgroundSprite.setScale(scaleX, scaleY);
+
+    backgroundLoaded = true;
+    return true;
 }
 
 
@@ -187,6 +290,7 @@ void GameplayState::handleEvents(sf::Event& event) {
     if (event.type == sf::Event::KeyPressed) {
         // si se presiona la tecla escape se cambia al estado de pausa
         if (event.key.code == sf::Keyboard::Escape) {
+            pauseMusic();
             auto pauseState = std::make_shared<PauseState>();
             game->pushState(pauseState);
         }
@@ -248,6 +352,8 @@ void GameplayState::handleEvents(sf::Event& event) {
                         if (playerGold >= tower->getCost()) {
                             selectedCellForPlacement->placeTower(tower);
                             playerGold -= tower->getCost();
+                            recalculateEnemyPaths();
+                            game->getAudioSystem().playSound("colocarTorre");
                         } else {
                             showGoldWarning = true;
                             goldWarningClock.restart();
@@ -281,6 +387,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                             selectedCellForPlacement->placeTower(tower);
                             playerGold -= tower->getCost();
                             recalculateEnemyPaths();
+                            game->getAudioSystem().playSound("colocarTorre");
                         } else {
                             showGoldWarning = true;
                             goldWarningClock.restart();
@@ -314,6 +421,8 @@ void GameplayState::handleEvents(sf::Event& event) {
                         if (playerGold >= tower->getCost()) {
                             selectedCellForPlacement->placeTower(tower);
                             playerGold -= tower->getCost();
+                            game->getAudioSystem().playSound("colocarTorre");
+                            recalculateEnemyPaths();
                         } else {
                             showGoldWarning = true;
                             goldWarningClock.restart();
@@ -362,6 +471,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                         if (tower && tower->canUpgrade() && playerGold >= tower->getUpgradeCost()) {
                             playerGold -= tower->getUpgradeCost();
                             tower->upgrade();
+                            game->getAudioSystem().playSound("upgrade");
                             std::cout << "Tower upgraded! New level: " << tower->getLevel()
                                       << ", Remaining gold: " << playerGold << "\n";
                         } else {
@@ -401,6 +511,12 @@ void GameplayState::handleEvents(sf::Event& event) {
 
 // actualiza la logica del estado de juego
 void GameplayState::update(float dt) {
+
+    if (!musicPaused && !game->getAudioSystem().isMusicPlaying()) {
+        std::cout << "La música se detuvo inesperadamente, reiniciando..." << std::endl;
+        startGameplayMusic();
+    }
+
     // si el juego ha terminado, no hacer nada
     if (gameOver) {
         return;
@@ -431,6 +547,9 @@ void GameplayState::update(float dt) {
 
             // registrar su rendimiento
             waveManager->trackEnemyPerformance(id, false, distanceTraveled, timeAlive);
+
+            // sonido de muerte
+            game->getAudioSystem().playSound("death");
 
             playerGold += (*it)->getGoldReward(); // ganar oro al matar
             std::cout << "Gold + " << (*it)->getGoldReward() << " (Total: " << playerGold << ")\n";
@@ -500,6 +619,10 @@ void GameplayState::prepareNextGeneration() {
 
 // dibuja el contenido del estado de juego en la ventana
 void GameplayState::render(sf::RenderWindow& window) {
+
+    // dibujar fondo verde
+    window.draw(greenBackground);
+
     // dibujar el fondo
     window.draw(backgroundSprite);
 
@@ -610,6 +733,7 @@ void GameplayState::render(sf::RenderWindow& window) {
 
 // libera recursos si es necesario cuando se sale del estado
 void GameplayState::cleanup() {
+    stopMusic();
     gameGrid.reset();
     enemies.clear();
     waveManager.reset();

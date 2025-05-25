@@ -8,11 +8,11 @@
 #include "Game/Enemies/Enemy.h"
 
 Gunner::Gunner() : Tower(
-    150, // cost
-    90, // damage
-    180.0f, // range
-    0.5f, // attack speed
-    8.0f // special cooldown
+    180, // cost
+    100, // damage
+    160.0f, // range
+    0.6f, // attack speed
+    9.0f // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Gunner.png");
     sprite.setTexture(texture);
@@ -59,16 +59,16 @@ void Gunner::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
 }
 
 int Gunner::getUpgradeCost() const {
-    return 100 + (level * 100); // Nivel 1:200, 2:300
+    return 120 + (level * 80); // Nivel 1:200, 2:300
 }
 
 void Gunner::upgrade() {
     if (canUpgrade()) {
         level++;
-        damage += 30;            // gran aumento de daño
-        range += 15.0f;          // mejora leve en rango
-        attackSpeed += 0.1f;     // mejora mínima en cadencia
-        specialChance += 0.1f;   // aumenta probabilidad de especial
+        damage += 35;            // gran aumento de daño
+        range += 12.0f;          // mejora leve en rango
+        attackSpeed += 0.08f;     // mejora mínima en cadencia
+        specialChance += 0.08f;   // aumenta probabilidad de especial
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

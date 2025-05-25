@@ -18,6 +18,10 @@ public:
     int getCols() const { return cols; }
     float getCellSize() const { return cellSize; }
     const DynamicArray<DynamicArray<Cell>>& getCells() const { return cells; }
+    bool loadBackgroundTextures();
+    sf::Texture groundTexture1;
+    sf::Texture groundTexture2;
+    bool texturesLoaded;
 
 private:
     DynamicArray<DynamicArray<Cell>> cells;

@@ -2,20 +2,47 @@
 #include "Game/Towers/Tower.h"
 
 // constructor de la celda
-Cell::Cell(float x, float y, float size) : selected(false), pathCell(false) {
+Cell::Cell(float x, float y, float size) : selected(false), pathCell(false), hasBackgroundTexture(false) {
     // configurar la forma rectangular de la celda
     shape.setPosition(x, y);
     shape.setSize(sf::Vector2f(size, size));
     shape.setFillColor(sf::Color::Transparent);
     shape.setOutlineThickness(1.0f);
     shape.setOutlineColor(sf::Color(100, 100, 100));
+
+    // configurar la fonma del fondo de la celda
+    backgroundShape.setPosition(x, y);
+    backgroundShape.setSize(sf::Vector2f(size, size));
+    backgroundShape.setFillColor(sf::Color::White);
+}
+
+
+
+// metodo para establecer la textura del fondo de la celda
+void Cell::setBackgroundTexture(const sf::Texture* texture) {
+    if (texture) {
+        backgroundShape.setTexture(texture);
+        backgroundShape.setTextureRect(sf::IntRect(0, 0, texture->getSize().x, texture->getSize().y));
+        hasBackgroundTexture = true;
+    } else {
+        backgroundShape.setTexture(nullptr);
+        hasBackgroundTexture = false;
+    }
 }
 
 
 
 // dibuja la celda en la ventana
 void Cell::draw(sf::RenderWindow& window) {
+    // dibujar el fondo de la celda
+    if (hasBackgroundTexture) {
+        window.draw(backgroundShape);
+    }
+
+    // dibujar el borde de la celda
     window.draw(shape);
+
+    // dibujar la torre
     if (tower) {
         sf::Vector2f center = shape.getPosition();
         center.x += shape.getSize().x / 2.f;

@@ -235,19 +235,19 @@ void WaveManager::calculateNextWaveEnemyCount() {
     lastWaveMaxProgress = maxProgress;
     lastWaveAvgProgress = avgProgress;
 
-    if (maxProgress > 0.8f) {
-        // si algún enemigo llegó muy lejos (>80% del camino), reducir o mantener cantidad
+    if (maxProgress > 0.7f) {
+        // si algún enemigo llegó muy lejos (>70% del camino), reducir o mantener cantidad
         if (enemiesPerWave > 1) {
             enemiesPerWave = std::max(1, enemiesPerWave - 1);
         }
     }
-    else if (maxProgress < 0.3f) {
-        // si ningún enemigo llegó lejos (<30% del camino), aumentar cantidad bastante
-        enemiesPerWave = std::min(15, enemiesPerWave + 2);
+    else if (maxProgress < 0.25f) {
+        // si ningún enemigo llegó lejos (<25% del camino), aumentar cantidad bastante
+        enemiesPerWave = std::min(8, enemiesPerWave + 2);
     }
-    else if (maxProgress < 0.5f) {
+    else if (maxProgress < 0.45f) {
         // si llegaron a medio camino, aumentar cantidad ligeramente
-        enemiesPerWave = std::min(15, enemiesPerWave + 1);
+        enemiesPerWave = std::min(8, enemiesPerWave + 1);
     }
 
     // entre 50-80% mantener igual cantidad
@@ -273,7 +273,7 @@ void WaveManager::calculateNextWaveEnemyCount() {
     }
 
     // garantizar valores mínimos y máximos razonables (minimo y maximo de enemigos por oleada)
-    enemiesPerWave = std::max(1, std::min(6, enemiesPerWave));
+    enemiesPerWave = std::max(1, std::min(10, enemiesPerWave));
 }
 
 
