@@ -111,7 +111,7 @@ void Ogre::takeDamage(float amount, const std::string& damageType) {
     float finalDamage = amount * damageMultiplier;
 
     // reducir la salud
-    health -= finalDamage;
+    Enemy::receiveDamage(finalDamage);
 
     // Crear texto flotante
     FloatingDamageText damageText;

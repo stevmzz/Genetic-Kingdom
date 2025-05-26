@@ -5,7 +5,10 @@
 #include <iostream>
 #include "Game/Towers/Tower.h"
 
-// constructor del enemigo
+// fuente compartida para mostrar textos flotantes de daño
+sf::Font Enemy::sharedFont;
+
+// constructor del enemigo con parametros individuales
 Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     :   id(-1),
         health(health),
@@ -19,20 +22,21 @@ Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float ar
         isActive(true),
         path(path),
         currentPathIndex(0),
-        totalDistanceTraveled(0.0f) {
+        totalDistanceTraveled(0.0f),
+        totalDamageReceived(0.0f) {
 
-    // inicializar direccion si hay un camino
+    // calcular direccion inicial hacia el primer punto del camino
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex + 1]);
     }
 
-    // iniciar el temporizador de vida
+    // iniciar medicion del tiempo de vida
     lifeTimer.restart();
 }
 
 
 
-// constructor basado en cromosoma
+// constructor del enemigo basado en cromosoma genetico
 Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
     :   id(-1),
         health(chromosome.getHealth()),
@@ -46,18 +50,21 @@ Enemy::Enemy(const Chromosome& chromosome, int goldReward, const sf::Vector2f& p
         isActive(true),
         path(path),
         currentPathIndex(0),
-        totalDistanceTraveled(0.0f) {
+        totalDistanceTraveled(0.0f),
+        totalDamageReceived(0.0f) {
 
+    // calcular direccion inicial hacia el primer punto del camino
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex + 1]);
     }
 
+    // iniciar medicion del tiempo de vida
     lifeTimer.restart();
 }
 
 
 
-// cargar textura
+// carga la textura del archivo y configura el sprite
 bool Enemy::loadTexture(const std::string& filename) {
     if (!texture.loadFromFile(filename)) {
         return false;
@@ -65,7 +72,7 @@ bool Enemy::loadTexture(const std::string& filename) {
 
     sprite.setTexture(texture);
 
-    // centrar el origen del sprite
+    // centrar el origen del sprite para rotaciones correctas
     sf::FloatRect bounds = sprite.getLocalBounds();
     sprite.setOrigin(bounds.width / 2, bounds.height / 2);
     sprite.setPosition(position);
@@ -75,47 +82,57 @@ bool Enemy::loadTexture(const std::string& filename) {
 
 
 
-// comprobar si el enemigo esta vivo
+// verifica si el enemigo sigue con vida y activo
 bool Enemy::isAlive() const {
     return health > 0.f && isActive;
 }
 
 
 
-// comprobar si ha llegado al final del camino
+// verifica si el enemigo alcanzo el final del camino
 bool Enemy::hasReachedEnd() const {
     return Pathfinding::hasReachedEnd(currentPathIndex, path);
 }
 
 
 
-// obtener la recompensa de oro
+// obtiene la cantidad de oro que da al morir
 int Enemy::getGoldReward() const {
     return goldReward;
 }
 
 
 
-// obtener la posicion actual
+// obtiene la posicion actual del enemigo en el mapa
 sf::Vector2f Enemy::getPosition() const {
     return position;
 }
 
 
 
-// dibujar el enemigo
+// dibuja el enemigo y sus elementos visuales en pantalla
 void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
     if (isActive) {
         target.draw(sprite, states);
 
-        // dibujar la barra de vida
+        // dibujar barra de vida con color segun porcentaje de salud
         sf::RectangleShape healthBar;
-        healthBar.setSize(sf::Vector2f(40.f * (health / maxHealth), 5.f));
-        healthBar.setFillColor(sf::Color::Green);
+        float healthPercentage = health / maxHealth;
+        healthBar.setSize(sf::Vector2f(40.f * healthPercentage, 5.f));
+
+        // cambiar color segun porcentaje de vida
+        if (healthPercentage > 0.6f) {
+            healthBar.setFillColor(sf::Color::Green);
+        } else if (healthPercentage > 0.3f) {
+            healthBar.setFillColor(sf::Color::Yellow);
+        } else {
+            healthBar.setFillColor(sf::Color::Red);
+        }
+
         healthBar.setPosition(position.x - 20.f, position.y - 40.f);
         target.draw(healthBar, states);
 
-        // borde de la barra de vida
+        // dibujar borde negro alrededor de la barra de vida
         sf::RectangleShape healthBarBorder;
         healthBarBorder.setSize(sf::Vector2f(40.f, 5.f));
         healthBarBorder.setFillColor(sf::Color::Transparent);
@@ -125,21 +142,20 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         target.draw(healthBarBorder, states);
     }
 
-    // dibujar los textos flotantes de daño
+    // dibujar numeros flotantes que muestran el daño recibido
     for (const auto& dmgText : floatingTexts) {
         target.draw(dmgText.text, states);
     }
-
 }
 
 
 
-// establecer un nuevo camino
+// asigna un nuevo camino para que siga el enemigo
 void Enemy::setPath(const DynamicArray<sf::Vector2f>& newPath) {
     path = newPath;
     currentPathIndex = 0;
 
-    // actualizar direccion
+    // recalcular direccion hacia el primer punto del nuevo camino
     if (!path.empty() && currentPathIndex < path.size() - 1) {
         direction = Pathfinding::getDirection(position, path[currentPathIndex]);
     }
@@ -147,21 +163,21 @@ void Enemy::setPath(const DynamicArray<sf::Vector2f>& newPath) {
 
 
 
-// recalcular el path usando A*
+// recalcula el camino usando algoritmo a* para evitar obstaculos
 void Enemy::recalculatePath(Grid* grid, const sf::Vector2f& goal) {
     if (!grid) {
         return;
     }
 
-    // calcular nuevo path desde la posición actual hasta el objetivo
+    // buscar nueva ruta desde posicion actual hasta el objetivo
     auto newPath = Pathfinding::findPath(grid, position, goal);
 
     if (!newPath.empty()) {
-        // actualizar el path
+        // actualizar camino y reiniciar indice
         path = newPath;
         currentPathIndex = 0;
 
-        // actualizar la dirección hacia el primer punto del nuevo path
+        // calcular nueva direccion hacia el primer punto
         if (path.size() > 1) {
             direction = Pathfinding::getDirection(position, path[0]);
         }
@@ -170,82 +186,188 @@ void Enemy::recalculatePath(Grid* grid, const sf::Vector2f& goal) {
 
 
 
-// establecer id
+// asigna un identificador unico al enemigo
 void Enemy::setId(int id) {
     this->id = id;
 }
 
 
 
-// obtener id
+// obtiene el identificador unico del enemigo
 int Enemy::getId() const {
     return id;
 }
 
 
 
-// obtener la distancia total recorrida
+// obtiene la distancia total que ha recorrido el enemigo
 float Enemy::getTotalDistanceTraveled() const {
     return totalDistanceTraveled;
 }
 
 
 
-// obtener el tiempo vivo
+// obtiene el daño total acumulado que ha recibido
+float Enemy::getTotalDamageReceived() const {
+    return totalDamageReceived;
+}
+
+
+
+// obtiene cuantos segundos ha estado vivo el enemigo
 float Enemy::getTimeAlive() const {
     return lifeTimer.getElapsedTime().asSeconds();
 }
 
 
 
-// aplicar daño al enemigo
+// calcula que tan efectivo ha sido el daño aplicado
+float Enemy::getDamageEffectiveness() const {
+    if (maxHealth <= 0.0f) return 0.0f;
+    return std::min(totalDamageReceived / maxHealth, 2.0f); // limite maximo del 200%
+}
+
+
+
+// aplica daño directo al enemigo y actualiza estadisticas
 void Enemy::receiveDamage(float damage) {
-    // reducir salud
+    // registrar el daño para estadisticas
+    trackDamage(damage);
+
+    // reducir puntos de vida
     health -= damage;
 
-    // Crear texto flotante
-    FloatingDamageText damageText;
-    damageText.text.setFont(sharedFont);
-    damageText.text.setCharacterSize(16);
-    damageText.text.setFillColor(sf::Color::Red);
-    damageText.text.setString("-" + std::to_string(static_cast<int>(damage)));
+    // mostrar numero flotante con el daño
+    createDamageText(damage);
 
-    sf::FloatRect bounds = damageText.text.getLocalBounds();
-    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
-
-    // Posición encima del enemigo
-    damageText.text.setPosition(position.x, position.y - 60.f);
-
-    floatingTexts.push_back(damageText);
-
-    // si la salud cae por debajo de 0, marcar como inactivo
+    // marcar como muerto si la vida llega a cero
     if (health <= 0.f) {
         health = 0.f;
         isActive = false;
     }
 }
 
-void Enemy::setSharedFont(const sf::Font& font) {
-    sharedFont = font;
+
+
+// aplica daño considerando resistencias segun el tipo de ataque
+void Enemy::takeDamage(float amount, const std::string& damageType) {
+    float damageMultiplier = 1.0f;
+
+    // calcular multiplicador segun resistencias del enemigo
+    if (damageType == "arrow") {
+        damageMultiplier = 1.0f - arrowResistance;
+    } else if (damageType == "magic") {
+        damageMultiplier = magicResistance;
+    } else if (damageType == "artillery") {
+        damageMultiplier = artilleryResistance;
+    }
+
+    // evitar daño negativo por resistencias muy altas
+    damageMultiplier = std::max(0.0f, damageMultiplier);
+
+    float finalDamage = amount * damageMultiplier;
+
+    // aplicar el daño calculado
+    receiveDamage(finalDamage);
 }
 
+
+
+// actualiza el estado del enemigo en cada frame
 void Enemy::update(float dt) {
-    for (auto it = floatingTexts.begin(); it != floatingTexts.end(); ) {
-        float t = it->timer.getElapsedTime().asSeconds();
+    // actualizar animaciones de textos flotantes
+    updateFloatingTexts(dt);
 
+    // mover al enemigo si esta vivo y tiene camino
+    if (isActive && !path.empty() && currentPathIndex < path.size()) {
+        updateMovement(dt);
+    }
+}
+
+
+
+// registra el daño recibido para estadisticas y debug
+void Enemy::trackDamage(float damage) {
+    totalDamageReceived += damage;
+
+    // mensaje de debug para seguimiento del daño
+    if (damage > 0) {
+        std::cout << "Enemigo " << id << " recibió " << damage
+                  << " de daño. Total acumulado: " << totalDamageReceived << "\n";
+    }
+}
+
+
+
+// crea un texto flotante que muestra el daño recibido
+void Enemy::createDamageText(float damage) {
+    FloatingDamageText damageText;
+    damageText.text.setFont(sharedFont);
+    damageText.text.setCharacterSize(16);
+    damageText.text.setFillColor(sf::Color::Red);
+    damageText.text.setString("-" + std::to_string(static_cast<int>(damage)));
+
+    // centrar el texto
+    sf::FloatRect bounds = damageText.text.getLocalBounds();
+    damageText.text.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+
+    // posicionar encima del enemigo con variacion aleatoria
+    float offsetX = (static_cast<float>(rand()) / RAND_MAX - 0.5f) * 20.0f;
+    damageText.text.setPosition(position.x + offsetX, position.y - 60.f);
+
+    floatingTexts.push_back(damageText);
+}
+
+
+
+// actualiza la animacion de los textos de daño flotantes
+void Enemy::updateFloatingTexts(float dt) {
+    for (size_t i = 0; i < floatingTexts.size(); ) {
+        float t = floatingTexts[i].timer.getElapsedTime().asSeconds();
+
+        // eliminar texto despues de 0.8 segundos
         if (t > 0.8f) {
-            it = floatingTexts.erase(it);
+            floatingTexts.erase(i);
         } else {
-            sf::Vector2f pos = it->text.getPosition();
-            pos.y -= 20.f * dt; // flota hacia arriba
-            it->text.setPosition(pos);
+            // mover el texto hacia arriba
+            sf::Vector2f pos = floatingTexts[i].text.getPosition();
+            pos.y -= 20.f * dt;
+            floatingTexts[i].text.setPosition(pos);
 
-            // desvanecer
-            sf::Color color = it->text.getFillColor();
+            // aplicar efecto de desvanecimiento gradual
+            sf::Color color = floatingTexts[i].text.getFillColor();
             color.a = static_cast<sf::Uint8>(255 * (1.0f - t / 0.8f));
-            it->text.setFillColor(color);
+            floatingTexts[i].text.setFillColor(color);
 
-            ++it;
+            ++i;
         }
     }
+}
+
+
+
+// actualiza la posicion y movimiento del enemigo
+void Enemy::updateMovement(float dt) {
+    sf::Vector2f oldPosition = position;
+    position = Pathfinding::moveAlongPath(position, path, currentPathIndex, speed, dt);
+    sprite.setPosition(position);
+
+    // calcular distancia recorrida en este frame para estadisticas
+    sf::Vector2f deltaPos = position - oldPosition;
+    float distance = std::sqrt(deltaPos.x * deltaPos.x + deltaPos.y * deltaPos.y);
+    totalDistanceTraveled += distance;
+
+    // actualizar direccion hacia el siguiente punto del camino
+    if (currentPathIndex < path.size()) {
+        sf::Vector2f nextPoint = path[currentPathIndex];
+        sf::Vector2f moveDirection = Pathfinding::getDirection(position, nextPoint);
+        direction = moveDirection;
+    }
+}
+
+
+
+// establece la fuente que usaran todos los enemigos para textos
+void Enemy::setSharedFont(const sf::Font& font) {
+    sharedFont = font;
 }

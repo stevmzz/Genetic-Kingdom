@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include <random>
 
 class Chromosome {
@@ -8,7 +7,7 @@ public:
   Chromosome();
   Chromosome(float health, float speed, float arrowRes, float magicRes, float artilleryRes);
   Chromosome(const Chromosome& other);
-  void calculateFitness(bool reachedEnd, float distanceTraveled, float damageDealt, float timeAlive);
+  void calculateFitness(bool reachedEnd, float distanceTraveled, float damageDealt, float timeAlive, float pathTotalLength = 1000.0f);
   Chromosome crossover(const Chromosome& other) const;
   void mutate(float mutationRate);
   float getHealth() const;
@@ -17,6 +16,9 @@ public:
   float getMagicResistance() const;
   float getArtilleryResistance() const;
   float getFitness() const;
+  float calculateDiversity(const Chromosome& other) const;
+  bool isValid() const;
+  void clampValues();
 
 private:
   float health;

@@ -76,7 +76,7 @@ void DarkElves::takeDamage(float amount, const std::string& damageType) {
     }
 
     float finalDamage = amount * damageMultiplier;
-    health -= finalDamage;
+    Enemy::receiveDamage(finalDamage);
 
     // Crear texto flotante
     FloatingDamageText damageText;
