@@ -7,8 +7,8 @@
 #include "Core/AudioSystem.h"
 
 Mage::Mage() : Tower(
-    120, // cost
-    60, // damage
+    150, // cost
+    45, // damage
     200.0f, // range
     1.2f, // attack speed
     7.0f // special cooldown

@@ -3,135 +3,245 @@
 #include <numeric>
 #include <iostream>
 
-// constructor
+// configura los parametros del algoritmo genetico
 Genetics::Genetics(int populationSize, float mutationRate, float crossoverRate)
     : populationSize(populationSize), mutationRate(mutationRate), crossoverRate(crossoverRate),
-      generation(0), mutationCount(0) {
+      generation(0), mutationCount(0), pathTotalLength(1000.0f), averageDiversity(1.0f),
+      convergenceThreshold(0.05f) {
 
-    // inicializar el generador con una semilla aleatoria
+    // configurar generador aleatorio con semilla variable
     std::random_device rd;
     randomGenerator = std::mt19937(rd());
 
-    // inicializar la población
+    // crear poblacion inicial con cromosomas aleatorios
     initializePopulation();
 }
 
 
 
-// inicializar la poblacion con cromosomas aleatorios
+// crea la poblacion inicial con cromosomas generados aleatoriamente
 void Genetics::initializePopulation() {
     population.clear();
 
     for (int i = 0; i < populationSize; ++i) {
         population.push_back(Chromosome());
     }
+
+    std::cout << "Población inicializada con " << populationSize << " cromosomas\n";
 }
 
 
 
-// evaluar la poblacion actual
+// evalua el rendimiento de todos los cromosomas en la poblacion
 void Genetics::evaluatePopulation(const DynamicArray<bool> &reachedEnd, const DynamicArray<float> &distancesTraveled, const DynamicArray<float> &damagesDealt, const DynamicArray<float> &timesAlive) {
-    if (reachedEnd.size() != distancesTraveled.size() || reachedEnd.size() != damagesDealt.size() || reachedEnd.size() != timesAlive.size() || reachedEnd.size() != population.size()) {
+
+    std::cout << "=== DEBUG evaluatePopulation ===\n";
+    std::cout << "reachedEnd.size(): " << reachedEnd.size() << "\n";
+    std::cout << "population.size(): " << population.size() << "\n";
+
+    // verificar consistencia en el tamano de los datos de rendimiento
+    size_t dataSize = reachedEnd.size();
+    if (dataSize != distancesTraveled.size() || dataSize != damagesDealt.size() || dataSize != timesAlive.size()) {
+        std::cout << "ERROR: Datos de performance inconsistentes\n";
         return;
     }
 
-    // evaluar cada cromosoma
-    for (size_t i = 0; i < population.size(); ++i) {
-        population[i].calculateFitness(reachedEnd[i], distancesTraveled[i], damagesDealt[i], timesAlive[i]);
+    // manejar caso sin datos de rendimiento
+    if (dataSize == 0) {
+        std::cout << "No hay datos de performance - asignando fitness base\n";
+        for (auto& chromosome : population) {
+            chromosome.calculateFitness(false, 0.0f, 0.0f, 0.0f, pathTotalLength);
+        }
+        return;
     }
+
+    std::cout << "Evaluando " << dataSize << " cromosomas con datos de performance...\n";
+
+    // evaluar cada cromosoma con sus datos de rendimiento correspondientes
+    size_t chromoIndex = 0;
+    for (size_t i = 0; i < dataSize && chromoIndex < population.size(); ++i) {
+        // usar cromosomas de forma ciclica si hay mas datos que cromosomas
+        size_t popIndex = i % population.size();
+
+        std::cout << "Evaluando cromosoma " << popIndex
+                  << " - reachedEnd: " << reachedEnd[i]
+                  << ", distancia: " << distancesTraveled[i]
+                  << ", daño: " << damagesDealt[i]
+                  << ", tiempo: " << timesAlive[i] << "\n";
+
+        population[popIndex].calculateFitness(reachedEnd[i], distancesTraveled[i],
+                                            damagesDealt[i], timesAlive[i], pathTotalLength);
+
+        std::cout << "Fitness calculado: " << population[popIndex].getFitness() << "\n";
+    }
+
+    // asignar fitness por defecto a cromosomas no evaluados
+    float avgFitness = getAverageFitness();
+    for (size_t i = dataSize; i < population.size(); ++i) {
+        if (population[i].getFitness() == 0.0f) {
+            population[i].calculateFitness(false, pathTotalLength * 0.3f, 10.0f, 5.0f, pathTotalLength);
+            std::cout << "Cromosoma " << i << " evaluado con datos default, fitness: "
+                      << population[i].getFitness() << "\n";
+        }
+    }
+
+    // actualizar metrica de diversidad poblacional
+    averageDiversity = getDiversityMetric();
+
+    std::cout << "Diversidad promedio: " << averageDiversity << "\n";
+    std::cout << "=== FIN DEBUG evaluatePopulation ===\n";
 }
 
 
 
-// seleccionar padres usando seleccion por ruleta
+// selecciona cromosomas padres para reproduccion usando elitismo y torneo
 DynamicArray<Chromosome> Genetics::selectParents() {
     DynamicArray<Chromosome> selectedParents;
 
-    // calcular la suma total de fitness
+    // ordenar poblacion por fitness de mayor a menor
+    DynamicArray<Chromosome> sortedPopulation = population;
+    std::sort(sortedPopulation.begin(), sortedPopulation.end(),
+        [](const Chromosome& a, const Chromosome& b) {
+            return a.getFitness() > b.getFitness();
+        });
+
+    // aplicar elitismo conservando los mejores individuos
+    int eliteCount = std::max(1, static_cast<int>(populationSize * 0.05f));
+
+    std::cout << "Selección: manteniendo " << eliteCount << " individuos elite\n";
+
+    for (int i = 0; i < eliteCount; i++) {
+        selectedParents.push_back(sortedPopulation[i]);
+    }
+
+    // calcular suma total de fitness para seleccion por ruleta
     float totalFitness = 0.0f;
     for (const auto& chromosome : population) {
-        totalFitness += chromosome.getFitness();
+        totalFitness += std::max(0.1f, chromosome.getFitness()); // evitar fitness cero
     }
 
-    // si el fitness total es cero, selecciona padres aleatorios
-    if (totalFitness <= 0.0f) {
-        std::uniform_int_distribution<int> dist(0, population.size() - 1);
-        for (int i = 0; i < populationSize; ++i) {
-            selectedParents.push_back(population[dist(randomGenerator)]);
-        }
-        return selectedParents;
-    }
+    // seleccionar el resto usando torneo o ruleta segun diversidad
+    const int tournamentSize = 3;
+    std::uniform_int_distribution<int> popDist(0, population.size() - 1);
 
-    // seleccion por ruleta
-    std::uniform_real_distribution<float> dist(0.0f, totalFitness);
-    for (int i = 0; i < populationSize; ++i) {
-        float spinValue = dist(randomGenerator);
-        float currentSum = 0.0f;
+    for (int i = eliteCount; i < populationSize; ++i) {
+        if (totalFitness > 0.0f && averageDiversity > convergenceThreshold) {
+            // seleccion por ruleta cuando hay suficiente diversidad
+            std::uniform_real_distribution<float> dist(0.0f, totalFitness);
+            float spinValue = dist(randomGenerator);
+            float currentSum = 0.0f;
 
-        for (const auto& chromosome : population) {
-            currentSum += chromosome.getFitness();
-            if (currentSum >= spinValue) {
-                selectedParents.push_back(chromosome);
-                break;
+            for (const auto& chromosome : population) {
+                currentSum += std::max(0.1f, chromosome.getFitness());
+                if (currentSum >= spinValue) {
+                    selectedParents.push_back(chromosome);
+                    break;
+                }
             }
+        } else {
+            // seleccion por torneo cuando hay poca diversidad
+            Chromosome best = population[popDist(randomGenerator)];
+
+            for (int j = 1; j < tournamentSize; j++) {
+                Chromosome candidate = population[popDist(randomGenerator)];
+                if (candidate.getFitness() > best.getFitness()) {
+                    best = candidate;
+                }
+            }
+
+            selectedParents.push_back(best);
         }
     }
+
+    // completar seleccion si es necesario
+    while (selectedParents.size() < populationSize) {
+        selectedParents.push_back(population[popDist(randomGenerator)]);
+    }
+
     return selectedParents;
 }
 
 
 
-// crear la siguiente generacion
+// genera la siguiente generacion mediante seleccion, cruzamiento y mutacion
 void Genetics::createNextGeneration() {
-    generation++; // incrementar la generacion
-    mutationCount = 0; // resetea el contador de mutaciones
-    DynamicArray<Chromosome> parents = selectParents(); // seleccionar padres
-    DynamicArray<Chromosome> newPopulation; // crear nueva poblacion
+    generation++;
+    mutationCount = 0;
 
-    // conservar el mejor cromosoma
+    std::cout << "=== Creando Generación " << generation << " ===\n";
+
+    DynamicArray<Chromosome> parents = selectParents();
+    DynamicArray<Chromosome> newPopulation;
+
+    // conservar mejor cromosoma usando elitismo estricto
     Chromosome bestChromosome = getBestChromosome();
     newPopulation.push_back(bestChromosome);
+    std::cout << "Mejor cromosoma conservado con fitness: " << bestChromosome.getFitness() << "\n";
 
-    // crear el resto de la población
+    // ajustar parametros segun estado actual de la poblacion
+    adaptParameters();
+
+    // generar resto de la poblacion mediante reproduccion
     std::uniform_real_distribution<float> crossoverChance(0.0f, 1.0f);
 
     while (newPopulation.size() < populationSize) {
-        // seleccionar dos padres aleatorios
+        // seleccionar dos padres diferentes para maximizar diversidad
         std::uniform_int_distribution<int> parentDist(0, parents.size() - 1);
-        int parent1Random = parentDist(randomGenerator);
-        int parent2Random = parentDist(randomGenerator);
-        Chromosome& parent1 = parents[parent1Random];
-        Chromosome& parent2 = parents[parent2Random];
+        int parent1Index = parentDist(randomGenerator);
+        int parent2Index = parentDist(randomGenerator);
+
+        // intentar obtener padres diferentes
+        int attempts = 0;
+        while (parent1Index == parent2Index && attempts < 10) {
+            parent2Index = parentDist(randomGenerator);
+            attempts++;
+        }
+
+        Chromosome& parent1 = parents[parent1Index];
+        Chromosome& parent2 = parents[parent2Index];
 
         Chromosome child;
 
-        // aplicar crossover si se cumple la probabilidad
+        // aplicar cruzamiento segun probabilidad configurada
         if (crossoverChance(randomGenerator) < crossoverRate) {
             child = parent1.crossover(parent2);
         } else {
-            // sin crossover, simplemente copia uno de los padres
-            child = (crossoverChance(randomGenerator) < 0.5f) ? parent1 : parent2;
+            // sin cruzamiento, heredar del padre con mejor fitness
+            child = (parent1.getFitness() > parent2.getFitness()) ? parent1 : parent2;
         }
 
-        bool mutated = false;
+        // detectar y contar mutaciones comparando antes y despues
         Chromosome originalChild = child;
         child.mutate(mutationRate);
 
-        // comprobar si hubo mutacion
-        if (child.getHealth() != originalChild.getHealth() || child.getSpeed() != originalChild.getSpeed() || child.getArrowResistance() != originalChild.getArrowResistance() || child.getArtilleryResistance() != originalChild.getArtilleryResistance() || child.getMagicResistance() != originalChild.getMagicResistance()) {
+        // verificar si ocurrio mutacion en alguna caracteristica
+        if (std::abs(child.getHealth() - originalChild.getHealth()) > 0.01f ||
+            std::abs(child.getSpeed() - originalChild.getSpeed()) > 0.01f ||
+            std::abs(child.getArrowResistance() - originalChild.getArrowResistance()) > 0.01f ||
+            std::abs(child.getArtilleryResistance() - originalChild.getArtilleryResistance()) > 0.01f ||
+            std::abs(child.getMagicResistance() - originalChild.getMagicResistance()) > 0.01f) {
             mutationCount++;
         }
 
         newPopulation.push_back(child);
     }
 
-    // reemplazar la poblacion antigua
+    // reemplazar poblacion anterior con la nueva generacion
     population = newPopulation;
+
+    // aplicar mecanismos de mantenimiento de diversidad si es necesario
+    if (averageDiversity < convergenceThreshold) {
+        maintainDiversity();
+    }
+
+    std::cout << "Nueva generación creada. Mutaciones: " << mutationCount
+              << "/" << populationSize << " (" << (100.0f * mutationCount / populationSize) << "%)\n";
+    std::cout << "=== Fin Generación " << generation << " ===\n";
 }
 
 
 
-// obtener el mejor cromosoma de la generacion actual
+// encuentra y retorna el cromosoma con mayor fitness
 Chromosome Genetics::getBestChromosome() const {
     if (population.empty()) {
         return Chromosome();
@@ -144,11 +254,11 @@ Chromosome Genetics::getBestChromosome() const {
 
 
 
-// obtener cromosomas para la siguiente oleada
+// selecciona cromosomas para generar enemigos en la siguiente oleada
 DynamicArray<Chromosome> Genetics::getChromosomesForWave(int count) {
     DynamicArray<Chromosome> waveChromosomes;
 
-    // si no hay suficientes cromosomas en la poblacion, devolver cromosomas aleatorios
+    // generar cromosomas aleatorios si no hay poblacion disponible
     if (population.empty()) {
         for (int i = 0; i < count; ++i) {
             waveChromosomes.push_back(Chromosome());
@@ -156,18 +266,31 @@ DynamicArray<Chromosome> Genetics::getChromosomesForWave(int count) {
         return waveChromosomes;
     }
 
-    // ordenar la poblacion por fitness
+    // ordenar poblacion por fitness para seleccion estratificada
     DynamicArray<Chromosome> sortedPopulation = population;
     std::sort(sortedPopulation.begin(), sortedPopulation.end(), [](const Chromosome& a, const Chromosome& b) {
         return a.getFitness() > b.getFitness();
     });
 
-    // seleccionar los mejores cromosomas
-    for (int i = 0; i < count && i < sortedPopulation.size(); ++i) {
+    // balancear entre elite y diversidad: 70% mejores, 30% diversos
+    int eliteCount = std::max(1, static_cast<int>(count * 0.7f));
+    int diverseCount = count - eliteCount;
+
+    // seleccionar los cromosomas con mejor fitness
+    for (int i = 0; i < eliteCount && i < sortedPopulation.size(); ++i) {
         waveChromosomes.push_back(sortedPopulation[i]);
     }
 
-    // si se necesitan mas cromsomas de los que hay en la poblacion
+    // agregar cromosomas diversos de la poblacion menos exitosa
+    if (diverseCount > 0 && sortedPopulation.size() > eliteCount) {
+        std::uniform_int_distribution<int> diverseDist(eliteCount, sortedPopulation.size() - 1);
+        for (int i = 0; i < diverseCount; ++i) {
+            int index = diverseDist(randomGenerator);
+            waveChromosomes.push_back(sortedPopulation[index]);
+        }
+    }
+
+    // completar con cromosomas aleatorios si es necesario
     while (waveChromosomes.size() < count) {
         waveChromosomes.push_back(Chromosome());
     }
@@ -177,7 +300,20 @@ DynamicArray<Chromosome> Genetics::getChromosomesForWave(int count) {
 
 
 
-// obtener el fitness promedio
+// recopila todos los valores de fitness de la poblacion actual
+DynamicArray<float> Genetics::getCurrentFitnessScores() const {
+    DynamicArray<float> scores;
+
+    for (const auto& chromosome : population) {
+        scores.push_back(chromosome.getFitness());
+    }
+
+    return scores;
+}
+
+
+
+// calcula el fitness promedio de toda la poblacion
 float Genetics::getAverageFitness() const {
     if (population.empty()) {
         return 0.0f;
@@ -193,17 +329,143 @@ float Genetics::getAverageFitness() const {
 
 
 
-// obtener la generacion actual
+// mide la diversidad genetica promedio de la poblacion
+float Genetics::getDiversityMetric() const {
+    if (population.size() < 2) {
+        return 1.0f;
+    }
+
+    float totalDiversity = 0.0f;
+    int comparisons = 0;
+
+    // calcular diversidad entre pares de cromosomas con limite de comparaciones
+    for (size_t i = 0; i < population.size(); ++i) {
+        for (size_t j = i + 1; j < population.size() && comparisons < 50; ++j) {
+            totalDiversity += population[i].calculateDiversity(population[j]);
+            comparisons++;
+        }
+    }
+
+    return comparisons > 0 ? totalDiversity / comparisons : 1.0f;
+}
+
+
+
+// determina si la poblacion ha convergido a una solucion similar
+bool Genetics::hasConverged() const {
+    return averageDiversity < convergenceThreshold;
+}
+
+
+
+// ajusta dinamicamente los parametros del algoritmo segun el progreso
+void Genetics::adaptParameters() {
+    // incrementar mutacion si la diversidad es muy baja
+    if (averageDiversity < convergenceThreshold) {
+        mutationRate = std::min(0.3f, mutationRate * 1.2f);
+        std::cout << "Baja diversidad detectada. Tasa de mutación aumentada a: " << mutationRate << "\n";
+    } else if (averageDiversity > 0.8f) {
+        // reducir mutacion si hay exceso de diversidad
+        mutationRate = std::max(0.05f, mutationRate * 0.9f);
+        std::cout << "Alta diversidad. Tasa de mutación reducida a: " << mutationRate << "\n";
+    }
+
+    // ajustar cruzamiento basado en calidad promedio de la poblacion
+    float avgFitness = getAverageFitness();
+    if (avgFitness < 100.0f) {
+        // poblacion debil necesita mas exploracion
+        crossoverRate = std::min(0.9f, crossoverRate * 1.1f);
+    } else if (avgFitness > 400.0f) {
+        // poblacion fuerte necesita mas conservacion
+        crossoverRate = std::max(0.5f, crossoverRate * 0.95f);
+    }
+}
+
+
+
+// introduce nuevos individuos aleatorios para mantener diversidad genetica
+void Genetics::maintainDiversity() {
+    int newIndividuals = populationSize * 0.2f; // reemplazar 20% de la poblacion
+    std::uniform_int_distribution<int> popDist(0, population.size() - 1);
+
+    std::cout << "Manteniendo diversidad: introduciendo " << newIndividuals << " nuevos individuos\n";
+
+    // ordenar poblacion por fitness para reemplazar a los peores
+    std::sort(population.begin(), population.end(), [](const Chromosome& a, const Chromosome& b) {
+        return a.getFitness() > b.getFitness();
+    });
+
+    // sustituir los peores individuos con cromosomas completamente nuevos
+    for (int i = 0; i < newIndividuals && i < population.size(); ++i) {
+        int replaceIndex = population.size() - 1 - i;
+        population[replaceIndex] = Chromosome(); // generar cromosoma aleatorio
+    }
+}
+
+
+
+// reinicia parcialmente la poblacion si no hay mejoras por muchas generaciones
+void Genetics::resetPopulationIfStagnant() {
+    static int stagnantGenerations = 0;
+    static float lastBestFitness = 0.0f;
+
+    float currentBestFitness = getBestChromosome().getFitness();
+
+    // detectar estancamiento comparando con fitness anterior
+    if (std::abs(currentBestFitness - lastBestFitness) < 5.0f) {
+        stagnantGenerations++;
+    } else {
+        stagnantGenerations = 0;
+    }
+
+    lastBestFitness = currentBestFitness;
+
+    // aplicar reinicio parcial despues de mucho estancamiento
+    if (stagnantGenerations > 10) {
+        std::cout << "Población estancada por " << stagnantGenerations
+                  << " generaciones. Reseteando 50% de la población.\n";
+
+        // conservar solo la mitad superior de la poblacion
+        std::sort(population.begin(), population.end(), [](const Chromosome& a, const Chromosome& b) {
+            return a.getFitness() > b.getFitness();
+        });
+
+        int keepCount = population.size() / 2;
+        for (size_t i = keepCount; i < population.size(); ++i) {
+            population[i] = Chromosome(); // reemplazar con cromosomas frescos
+        }
+
+        stagnantGenerations = 0;
+        mutationRate = 0.15f; // restaurar tasa de mutacion por defecto
+        crossoverRate = 0.7f; // restaurar tasa de cruzamiento por defecto
+    }
+}
+
+
+
+// obtiene el numero de la generacion actual
 int Genetics::getGeneration() const {
     return generation;
 }
 
-// obtener el numero de mutaciones en la ultima generacion
+
+
+// obtiene cuantas mutaciones ocurrieron en la ultima generacion
 int Genetics::getMutationCount() const {
     return mutationCount;
 }
 
-// obtener la tasa de mutacion actual
+
+
+// obtiene la tasa de mutacion configurada actualmente
 float Genetics::getMutationRate() const {
     return mutationRate;
+}
+
+
+
+// establece la longitud total del camino para calculos de fitness
+void Genetics::setPathTotalLength(float length) {
+    pathTotalLength = length;
+    std::cout << "Longitud total del camino establecida: " << length << "\n";
 }

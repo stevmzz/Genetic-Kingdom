@@ -1,53 +1,56 @@
-#ifndef GAMEPLAYSTATE_H
-#define GAMEPLAYSTATE_H
+#pragma once
 
 #include <SFML/Graphics.hpp>
 #include "GameState.h"
 #include <memory>
-#include <UI/Button.h>
-
 #include "../include/Game/Grid/Grid.h"
-#include "../include/Game/Enemies/Enemy.h"
 #include "../include/Game/Systems/WaveManager.h"
 #include "../include/Game/Genetics/Genetics.h"
-#include "../DataStructures/DynamicArray.h"
+#include "../include/Game/Enemies/Enemy.h"
+#include "../include/UI/Button.h"
+#include "../include/UI/StatsPanel.h"
+
+enum class TowerType {
+    Archer,
+    Mage,
+    Gunner
+};
 
 class GameplayState : public GameState {
 private:
-    sf::Text gameplayText;
     std::unique_ptr<Grid> gameGrid;
     const int GRID_ROWS = 11;
     const int GRID_COLS = 20;
     const float CELL_SIZE = 70.0f;
-    sf::Texture backgroundTexture;
-    sf::Sprite backgroundSprite;
-    sf::Vector2f spawnPoint;
-    sf::Vector2f goalPoint;
     DynamicArray<std::unique_ptr<Enemy>> enemies;
     std::unique_ptr<WaveManager> waveManager;
     std::unique_ptr<Genetics> geneticsSystem;
+    sf::Vector2f spawnPoint;
+    sf::Vector2f goalPoint;
+    int playerGold = 200;
     int enemiesKilled;
     bool gameOver;
+    bool musicPaused;
+    TowerType selectedTowerType;
+    class Cell* selectedCellForPlacement = nullptr;
     DynamicArray<std::shared_ptr<Button>> towerButtons;
     DynamicArray<std::shared_ptr<sf::Text>> towerPriceTexts;
-    Cell* selectedCellForPlacement = nullptr;
-    bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
-    int playerGold = 200; // oro inicial
     sf::Text insufficientGoldText;
-    sf::Clock goldWarningClock;
-    bool showGoldWarning = false;
-    sf::Text upgradeGoldText;
-    bool showUpgradeGoldText = false;
-    bool backgroundLoaded;
-    sf::RectangleShape greenBackground;
-    bool musicPaused;
     sf::Text pathBlockedText;
-    sf::Clock pathBlockedClock;
+    sf::Text upgradeGoldText;
+    bool showGoldWarning = false;
     bool showPathBlocked = false;
-
-    //Variable para el panel de estadisticas
+    bool showUpgradeGoldText = false;
+    sf::Clock goldWarningClock;
+    sf::Clock pathBlockedClock;
+    sf::RectangleShape greenBackground;
+    sf::Texture backgroundTexture;
+    sf::Sprite backgroundSprite;
+    bool backgroundLoaded = false;
     std::unique_ptr<StatsPanel> statsPanel;
-
+    int enemiesKilledThisWave = 0;
+    DynamicArray<float> currentWaveFitnessList;
+    int currentWaveForStats = 0;
 
 public:
     GameplayState();
@@ -58,25 +61,23 @@ public:
     void update(float dt) override;
     void render(sf::RenderWindow& window) override;
     void cleanup() override;
-    void initializeSpawnAndGoalPoints();
-    void prepareNextGeneration();
-    void handleTowerAttacks(float dt);
-    bool canPlaceTowerAt(Cell* cell);
-    void recalculateEnemyPaths();
-    bool loadBackgroundTexture();
-    void startGameplayMusic();
     void pauseMusic();
     void resumeMusic();
-    void stopMusic();
+
+private:
     void loadGameplaySounds();
-
-    enum class TowerType {
-        Archer,
-        Mage,
-        Gunner
-    };
-
-    TowerType selectedTowerType;
+    void startGameplayMusic();
+    bool loadBackgroundTexture();
+    void initializeSpawnAndGoalPoints();
+    void stopMusic();
+    bool canPlaceTowerAt(class Cell* cell);
+    void recalculateEnemyPaths();
+    void handleTowerAttacks(float dt);
+    void prepareNextGeneration();
+    void updateStatsPanel();
+    void collectEnemyPerformanceData();
+    bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
+    void processEnemyDeath(std::unique_ptr<Enemy>& enemy);
+    void processEnemyReachedEnd(std::unique_ptr<Enemy>& enemy);
+    void updateEnemyStates(float dt);
 };
-
-#endif // GAMEPLAYSTATE_H

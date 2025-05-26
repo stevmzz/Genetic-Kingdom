@@ -1,11 +1,17 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
-#include <memory>
-#include "../Genetics/Chromosome.h"
-#include "./DataStructures/DynamicArray.h"
+#include "../include/DataStructures/DynamicArray.h"
+#include "../include/Game/Genetics/Chromosome.h"
 
-class Grid;
+struct FloatingDamageText {
+    sf::Text text;
+    sf::Clock timer;
+
+    FloatingDamageText() {
+        timer.restart();
+    }
+};
 
 class Enemy : public sf::Drawable {
 protected:
@@ -25,7 +31,10 @@ protected:
     DynamicArray<sf::Vector2f> path;
     size_t currentPathIndex;
     float totalDistanceTraveled;
+    float totalDamageReceived;
     sf::Clock lifeTimer;
+    DynamicArray<FloatingDamageText> floatingTexts;
+    static sf::Font sharedFont;
 
 public:
     Enemy(
@@ -44,31 +53,29 @@ public:
         const sf::Vector2f& position,
         const DynamicArray<sf::Vector2f>& path);
 
-    struct FloatingDamageText {
-        sf::Text text;
-        sf::Clock timer;
-    };
-
-    std::vector<FloatingDamageText> floatingTexts;
-
     virtual ~Enemy() = default;
-
-    virtual void update(float dt) = 0;
-    virtual void takeDamage(float amount, const std::string& damageType) = 0;
-
+    virtual void update(float dt);
+    virtual void takeDamage(float amount, const std::string& damageType);
+    bool loadTexture(const std::string& filename);
     bool isAlive() const;
     bool hasReachedEnd() const;
+    void setPath(const DynamicArray<sf::Vector2f>& newPath);
+    void recalculatePath(class Grid* grid, const sf::Vector2f& goal);
     int getGoldReward() const;
     sf::Vector2f getPosition() const;
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
-    void setPath(const DynamicArray<sf::Vector2f>& newPath);
-    bool loadTexture(const std::string& filename);
-    void setId(int id);
     int getId() const;
+    void setId(int id);
     float getTotalDistanceTraveled() const;
+    float getTotalDamageReceived() const;
     float getTimeAlive() const;
-    void receiveDamage(float damage);
-    inline static sf::Font sharedFont;
+    float getDamageEffectiveness() const;
+    virtual void receiveDamage(float damage);
+    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     static void setSharedFont(const sf::Font& font);
-    void recalculatePath(Grid* grid, const sf::Vector2f& goal);
+
+protected:
+    void updateFloatingTexts(float dt);
+    void createDamageText(float damage);
+    void updateMovement(float dt);
+    void trackDamage(float damage);
 };

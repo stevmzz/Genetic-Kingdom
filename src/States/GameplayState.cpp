@@ -13,57 +13,56 @@
 #include "Game/Enemies/DarkElves.h"
 #include "Game/Enemies/Harpy.h"
 #include "Game/Enemies/Mercenary.h"
-
-//Incluye la clase del panel de estadisticas
+#include "../include/Game/Genetics/Genetics.h"
 #include "../include/UI/StatsPanel.h"
 
-
-// constructor del estado de juego
+// inicializa el estado de juego con valores por defecto
 GameplayState::GameplayState()
     :   enemiesKilled(0),
         gameOver(false),
         selectedTowerType(TowerType::Archer),
-        musicPaused(false) {
+        musicPaused(false),
+        enemiesKilledThisWave(0),
+        currentWaveForStats(0) {
 }
 
 
 
-// destructor del estado de juego
+// limpia recursos al destruir el estado
 GameplayState::~GameplayState() {
 }
 
 
 
-// inicializa el estado de juego
+// configura todos los sistemas necesarios para el juego
 void GameplayState::init() {
     auto& window = game->getWindow();
     auto& font = game->getFont();
 
-    // pone el cursor visible
+    // activar cursor del mouse para interacciones
     game->getWindow().setMouseCursorVisible(true);
 
-    // cargar sonidos del juego
+    // preparar todos los sonidos del juego
     loadGameplaySounds();
 
-    // iniciar musica
+    // iniciar musica de fondo
     startGameplayMusic();
 
-    // detener la musica del menu
+    // detener cualquier musica previa del menu
     game->getAudioSystem().stopAllMusic();
 
-    // cargar fondo
+    // configurar imagen de fondo
     loadBackgroundTexture();
 
-    // inicializar la cuadricula centrada en la pantalla
+    // crear cuadricula centrada en pantalla
     float gridX = (window.getSize().x - GRID_COLS * CELL_SIZE) / 2;
     float gridY = (window.getSize().y - GRID_ROWS * CELL_SIZE) / 2;
     gameGrid = std::make_unique<Grid>(gridX, gridY, GRID_ROWS, GRID_COLS, CELL_SIZE);
 
-    // inicializar puntos de spawn y objetivo
+    // definir puntos de entrada y salida de enemigos
     initializeSpawnAndGoalPoints();
 
-    // texto que avisa al jugador si no tiene suficiente dinero
-    // siempre esta ahi, solo se muestra cuando es necesario
+    // configurar mensaje de oro insuficiente
     insufficientGoldText.setFont(game->getFont());
     insufficientGoldText.setCharacterSize(30);
     insufficientGoldText.setFillColor(sf::Color::White);
@@ -74,7 +73,7 @@ void GameplayState::init() {
         game->getWindow().getSize().y - textBounds.height - 250.f
     );
 
-    // texto que avisa al jugador si bloqueará el camino
+    // configurar mensaje de bloqueo de camino
     pathBlockedText.setFont(game->getFont());
     pathBlockedText.setCharacterSize(30);
     pathBlockedText.setFillColor(sf::Color::Red);
@@ -85,58 +84,68 @@ void GameplayState::init() {
         game->getWindow().getSize().y - pathTextBounds.height - 250.f
     );
 
-    // font para celdas de las torres
+    // configurar fuente compartida para torres
     Tower::setSharedFont(game->getFont());
 
-    // sonido para ataces de torres
+    // configurar sistema de audio para torres
     Tower::setAudioSystem(&game->getAudioSystem());
 
-    // Font para dano encima de enemigos
+    // configurar fuente compartida para enemigos
     Enemy::setSharedFont(game->getFont());
 
-    // inicializar el sistema genetico (población 20, tasa de mutación 0.1, tasa de crossover 0.7)
-    geneticsSystem = std::make_unique<Genetics>(20, 0.1f, 0.7f);
+    // inicializar algoritmo genetico con parametros optimizados
+    geneticsSystem = std::make_unique<Genetics>(20, 0.25f, 0.85f);
 
-    // crear un path inicial para calcular la longitud total
+    // calcular camino inicial para establecer longitud de referencia
     auto initialPath = Pathfinding::findPath(gameGrid.get(), spawnPoint, goalPoint);
 
-    // inicializar el gestor de oleadas
+    // inicializar gestor de oleadas con parametros base
     waveManager = std::make_unique<WaveManager>(initialPath, gameGrid.get(), goalPoint, 1.5f);
 
-    // preparar cromosomas para la primera oleada
+    // establecer longitud del camino en ambos sistemas para calculos de fitness
+    if (!initialPath.empty()) {
+        float pathLength = 0.0f;
+        for (size_t i = 0; i < initialPath.size() - 1; i++) {
+            sf::Vector2f segment = initialPath[i+1] - initialPath[i];
+            pathLength += std::sqrt(segment.x * segment.x + segment.y * segment.y);
+        }
+        waveManager->setPathTotalLength(pathLength);
+        geneticsSystem->setPathTotalLength(pathLength);
+        std::cout << "Longitud del camino establecida: " << pathLength << "\n";
+    }
+
+    // obtener cromosomas para la primera oleada
     DynamicArray<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
     waveManager->setWaveChromosomes(firstWaveChromosomes);
 
-    // iniciar la primera oleada automaticamente
+    // comenzar inmediatamente la primera oleada
     waveManager->startNextWave();
 
-    // inicializar el panel de estadísticas
+    // crear panel de estadisticas para mostrar progreso genetico
     statsPanel = std::make_unique<StatsPanel>(game->getFont());
-
 }
 
 
 
-
-// metodo para cargar sonidos
+// carga todos los efectos de sonido necesarios para el juego
 void GameplayState::loadGameplaySounds() {
 
-    // sonido de muerte de enemigos
+    // sonido cuando muere un enemigo
     if (!game->getAudioSystem().loadSound("death", "assets/audio/death.wav")) {
         std::cerr << "error: no se pudo cargar death.mp3" << std::endl;
     }
 
-    // sonido de colocacion de torre
+    // sonido al colocar una torre
     if (!game->getAudioSystem().loadSound("colocarTorre", "assets/audio/colocarTorre.wav")) {
         std::cerr << "error: no se pudo cargar colocarTorre.mp3" << std::endl;
     }
 
-    // sonido de upgrade de torre
+    // sonido al mejorar una torre
     if (!game->getAudioSystem().loadSound("upgrade", "assets/audio/upgrade.mp3")) {
         std::cerr << "error: no se pudo cargar upgrade.mp3" << std::endl;
     }
 
-    //sonidos de ataques de torres:
+    // sonidos de ataques de cada tipo de torre
     if (!game->getAudioSystem().loadSound("arrow", "assets/audio/flecha.mp3")) {
         std::cerr << "error: no se pudo cargar flecha.mp3" << std::endl;
     }
@@ -150,7 +159,7 @@ void GameplayState::loadGameplaySounds() {
 
 
 
-// metodo para iniciar la musica de fondo
+// inicia la musica de fondo del gameplay
 void GameplayState::startGameplayMusic() {
     std::cout << "Iniciando música de gameplay..." << std::endl;
 
@@ -161,7 +170,7 @@ void GameplayState::startGameplayMusic() {
 
 
 
-// pausar musica
+// detiene temporalmente la musica de fondo
 void GameplayState::pauseMusic() {
     if (!musicPaused) {
         game->getAudioSystem().stopAllMusic();
@@ -171,7 +180,7 @@ void GameplayState::pauseMusic() {
 
 
 
-// continuar musica
+// reanuda la musica de fondo si estaba pausada
 void GameplayState::resumeMusic() {
     if (musicPaused) {
         startGameplayMusic();
@@ -182,7 +191,7 @@ void GameplayState::resumeMusic() {
 
 
 
-// parar musica
+// detiene completamente la musica de fondo
 void GameplayState::stopMusic() {
     game->getAudioSystem().stopAllMusic();
     musicPaused = false;
@@ -191,11 +200,11 @@ void GameplayState::stopMusic() {
 
 
 
-// cargar fondo
+// carga y configura la imagen de fondo del nivel
 bool GameplayState::loadBackgroundTexture() {
     auto& window = game->getWindow();
     greenBackground.setSize(sf::Vector2f(window.getSize().x, window.getSize().y));
-    greenBackground.setFillColor(sf::Color(34, 139, 34)); // Verde bosque
+    greenBackground.setFillColor(sf::Color(34, 139, 34)); // verde bosque como respaldo
 
     if (!backgroundTexture.loadFromFile("assets/images/backgrounds/backgroundGame.png")) {
         std::cerr << "error: No se pudo cargar gameplay_background.png" << std::endl;
@@ -203,14 +212,13 @@ bool GameplayState::loadBackgroundTexture() {
         return false;
     }
 
-    // configurar el sprite del fondo png
+    // ajustar sprite de fondo para cubrir toda la pantalla
     backgroundSprite.setTexture(backgroundTexture);
 
-    // obtener tamaños
+    // calcular escala necesaria para llenar la ventana
     sf::Vector2u windowSize = window.getSize();
     sf::Vector2u textureSize = backgroundTexture.getSize();
 
-    // escalar para cubrir toda la pantalla
     float scaleX = static_cast<float>(windowSize.x) / textureSize.x;
     float scaleY = static_cast<float>(windowSize.y) / textureSize.y;
     backgroundSprite.setScale(scaleX, scaleY);
@@ -221,7 +229,7 @@ bool GameplayState::loadBackgroundTexture() {
 
 
 
-// inicializa el punto de entrada y salida
+// define donde aparecen los enemigos y hacia donde se dirigen
 void GameplayState::initializeSpawnAndGoalPoints() {
     float gridStartX = gameGrid->getX();
     float gridStartY = gameGrid->getY();
@@ -229,32 +237,31 @@ void GameplayState::initializeSpawnAndGoalPoints() {
     int cols = gameGrid->getCols();
     float cellSize = gameGrid->getCellSize();
 
-    // calcular fila central
+    // usar fila central para el camino principal
     int middleRow = rows / 2;
 
-    // punto de entrada (borde izquierdo, fila central)
+    // punto de aparicion en el borde izquierdo
     spawnPoint = sf::Vector2f(gridStartX - cellSize/2, gridStartY + middleRow * cellSize + cellSize/2);
 
-    // punto de salida (borde derecho, fila central)
+    // punto objetivo en el borde derecho
     goalPoint = sf::Vector2f(gridStartX + (cols + 1) * cellSize + cellSize / 2, gridStartY + middleRow * cellSize + cellSize / 2);
 }
 
 
 
-
-// verificar si se puede colocar una torre
+// verifica si se puede colocar una torre sin bloquear caminos
 bool GameplayState::canPlaceTowerAt(Cell* cell) {
     if (!cell || cell->hasTower()) {
         return false;
     }
 
-    // temporalmente "colocar" una torre para verificar
+    // simular colocacion temporal para verificar impacto
     cell->placeTower(std::make_shared<Archer>());
 
-    // verificar que todavía existe un camino desde spawn a goal
+    // verificar que sigue existiendo camino desde spawn hasta objetivo
     bool hasPath = Pathfinding::hasValidPath(gameGrid.get(), spawnPoint, goalPoint);
 
-    // verificar que todos los enemigos activos pueden llegar al goal
+    // verificar que enemigos actuales pueden seguir llegando al objetivo
     if (hasPath) {
         for (const auto& enemy : enemies) {
             if (enemy->isAlive()) {
@@ -267,7 +274,7 @@ bool GameplayState::canPlaceTowerAt(Cell* cell) {
         }
     }
 
-    // verificar que futuros enemigos que aparezcan tendrán camino
+    // verificar que futuros enemigos tendran camino disponible
     if (hasPath && waveManager->isWaveInProgress()) {
         auto spawnPath = Pathfinding::findPath(gameGrid.get(), spawnPoint, goalPoint);
         if (spawnPath.empty()) {
@@ -275,14 +282,14 @@ bool GameplayState::canPlaceTowerAt(Cell* cell) {
         }
     }
 
-    // remover la torre temporal
+    // remover torre temporal y devolver resultado
     cell->placeTower(nullptr);
     return hasPath;
 }
 
 
 
-// recalcular paths de enemigos
+// actualiza los caminos de todos los enemigos vivos
 void GameplayState::recalculateEnemyPaths() {
     for (auto& enemy : enemies) {
         if (enemy->isAlive()) {
@@ -296,9 +303,9 @@ void GameplayState::recalculateEnemyPaths() {
 
 
 
-// maneja los eventos del estado de juego
+// procesa entradas del jugador y controla interacciones
 void GameplayState::handleEvents(sf::Event& event) {
-    // si el juego ha terminado, solo permitir salir
+    // si el juego termino, solo permitir salir
     if (gameOver) {
         if (event.type == sf::Event::KeyPressed) {
             auto menuState = std::make_shared<MenuState>();
@@ -307,14 +314,14 @@ void GameplayState::handleEvents(sf::Event& event) {
         return;
     }
 
-    // primero, si hay botones activos, revisar si se hizo clic en ellos
+    // manejar clics en botones de torres si existen
     for (auto& button : towerButtons) {
         if (button->handleEvent(event)) {
-            return; // solo salir si realmente se hizo clic en un botón
+            return; // salir si se hizo clic en un boton
         }
     }
 
-    // cancelar selección si se hace clic fuera de botones y celda activa
+    // cancelar seleccion si se hace clic fuera de botones y celda activa
     if (event.type == sf::Event::MouseButtonPressed &&
         event.mouseButton.button == sf::Mouse::Left &&
         selectedCellForPlacement) {
@@ -332,26 +339,26 @@ void GameplayState::handleEvents(sf::Event& event) {
         }
 
     if (event.type == sf::Event::KeyPressed) {
-        // si se presiona la tecla escape se cambia al estado de pausa
+        // pausar juego con escape
         if (event.key.code == sf::Keyboard::Escape) {
             auto pauseState = std::make_shared<PauseState>();
             game->pushState(pauseState);
             recalculateEnemyPaths();
         }
-        // para pruebas: iniciar la siguiente oleada con 'N'
+        // forzar siguiente oleada con n (para pruebas)
         else if (event.key.code == sf::Keyboard::N && !waveManager->isWaveInProgress()) {
             prepareNextGeneration();
         }
     }
 
-    // manejar eventos del mouse para la cuadricula
+    // manejar movimiento del mouse sobre la cuadricula
     if (event.type == sf::Event::MouseMoved && gameGrid) {
         float mouseX = static_cast<float>(event.mouseMove.x);
         float mouseY = static_cast<float>(event.mouseMove.y);
 
         gameGrid->clearSelection();
 
-        // Evitar que brillen las celdas si hay botones activos
+        // evitar resaltar celdas si hay botones activos
         if (towerButtons.empty()) {
             Cell* hoveredCell = gameGrid->getCellAtPosition(mouseX, mouseY);
             if (hoveredCell) {
@@ -360,12 +367,12 @@ void GameplayState::handleEvents(sf::Event& event) {
         }
     }
 
-    // si ya hay una celda esperando colocación, no permitir seleccionar otra
+    // evitar seleccionar otra celda si ya hay una esperando
     if (selectedCellForPlacement && !towerButtons.empty()) {
         return;
     }
 
-    // clic izquierdo: mostrar botones de torre si la celda es válida
+    // manejar clic izquierdo para mostrar opciones de torres
     if (event.type == sf::Event::MouseButtonPressed &&
         event.mouseButton.button == sf::Mouse::Left &&
         gameGrid) {
@@ -385,7 +392,7 @@ void GameplayState::handleEvents(sf::Event& event) {
             float buttonWidth = 150.f;
             float buttonHeight = 55.f;
 
-            // Botón Archer
+            // crear boton para torre arquero
             auto btnArcher = std::make_shared<Button>(
                 (basePos.x- 25.0f) - 160.f, basePos.y + offsetY,
                 buttonWidth, buttonHeight,
@@ -416,7 +423,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                 }
             );
 
-            // Aplicar texturas café/madera
+            // aplicar texturas de madera a los botones
             btnArcher->setTextures(
                 "assets/images/buttons/wood_button_normal.png",
                 "assets/images/buttons/wood_button_selected.png"
@@ -431,7 +438,7 @@ void GameplayState::handleEvents(sf::Event& event) {
             priceTextArcher->setPosition((basePos.x- 25.0f) - 160.f + buttonWidth/2 - 15.f, basePos.y + offsetY + buttonHeight + 5.f);
             towerPriceTexts.push_back(priceTextArcher);
 
-            // Botón Mage
+            // crear boton para torre mago
             auto btnMage = std::make_shared<Button>(
                 (basePos.x- 25.0f), basePos.y + offsetY,
                 buttonWidth, buttonHeight,
@@ -462,7 +469,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                 }
             );
 
-            // Aplicar texturas café/madera
+            // aplicar texturas de madera
             btnMage->setTextures(
                 "assets/images/buttons/wood_button_normal.png",
                 "assets/images/buttons/wood_button_selected.png"
@@ -477,7 +484,7 @@ void GameplayState::handleEvents(sf::Event& event) {
             priceTextMage->setPosition((basePos.x- 35.0f) + buttonWidth/2 - 15.f, basePos.y + offsetY + buttonHeight + 5.f);
             towerPriceTexts.push_back(priceTextMage);
 
-            // Botón Gunner
+            // crear boton para torre artillero
             auto btnGunner = std::make_shared<Button>(
                 (basePos.x- 25.0f) + 160.f, basePos.y + offsetY,
                 buttonWidth, buttonHeight,
@@ -508,7 +515,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                 }
             );
 
-            // Aplicar texturas café/madera
+            // aplicar texturas de madera
             btnGunner->setTextures(
                 "assets/images/buttons/wood_button_normal.png",
                 "assets/images/buttons/wood_button_selected.png"
@@ -562,7 +569,7 @@ void GameplayState::handleEvents(sf::Event& event) {
                     }
                 );
 
-                // Aplicar texturas café/madera al botón de upgrade
+                // aplicar texturas de madera al boton de mejora
                 btnUpgrade->setTextures(
                     "assets/images/buttons/wood_button_normal.png",
                     "assets/images/buttons/wood_button_selected.png"
@@ -575,13 +582,13 @@ void GameplayState::handleEvents(sf::Event& event) {
                 upgradeGoldText.setFillColor(sf::Color::White);
                 upgradeGoldText.setString(std::to_string(tower->getUpgradeCost()) + "g");
 
-                // posición centrada debajo del botón
+                // centrar texto debajo del boton
                 sf::Vector2f btnPos((basePos.x - btnSize.x) + 235.0f / 2.f, basePos.y - 85.f);
                 sf::FloatRect textBounds = upgradeGoldText.getLocalBounds();
 
                 upgradeGoldText.setPosition(
-                    btnPos.x + (btnSize.x / 2.f) - (textBounds.width / 2.f), // centrar horizontalmente
-                    btnPos.y + btnSize.y + 8.f // justo debajo del botón
+                    btnPos.x + (btnSize.x / 2.f) - (textBounds.width / 2.f),
+                    btnPos.y + btnSize.y + 8.f
                 );
 
                 showUpgradeGoldText = true;
@@ -592,26 +599,31 @@ void GameplayState::handleEvents(sf::Event& event) {
 
 
 
-
-// actualiza la logica del estado de juego
+// actualiza la logica principal del juego cada frame
 void GameplayState::update(float dt) {
 
+    // reiniciar musica si se detuvo inesperadamente
     if (!musicPaused && !game->getAudioSystem().isMusicPlaying()) {
         std::cout << "La música se detuvo inesperadamente, reiniciando..." << std::endl;
         startGameplayMusic();
     }
 
-    // si el juego ha terminado, no hacer nada
+    // detener actualizaciones si el juego termino
     if (gameOver) {
         return;
     }
 
-    // actualizar el gestor de oleadas
+    // obtener nuevos enemigos del gestor de oleadas
     auto newEnemies = waveManager->update(dt);
 
-    // añadir los nuevos enemigos a la lista con paths calculados
+    // mostrar debug cuando aparecen enemigos
+    if (!newEnemies.empty()) {
+        std::cout << "=== APARECIERON " << newEnemies.size() << " NUEVOS ENEMIGOS ===\n";
+    }
+
+    // agregar nuevos enemigos con sus caminos calculados
     for (auto& enemy : newEnemies) {
-        // calcular el path inicial para el enemigo
+        // calcular ruta optima para el enemigo
         auto path = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
         if (!path.empty()) {
             enemy->setPath(path);
@@ -619,71 +631,147 @@ void GameplayState::update(float dt) {
         enemies.push_back(std::move(enemy));
     }
 
-    // actualizar cada enemigo
+    // mostrar informacion de debug periodicamente
+    static float debugTimer = 0;
+    debugTimer += dt;
+    if (debugTimer >= 2.0f) { // cada 2 segundos
+        std::cout << "Enemigos activos: " << enemies.size()
+                  << ", Oleada en progreso: " << (waveManager->isWaveInProgress() ? "SÍ" : "NO")
+                  << ", Enemigos spawneados: " << waveManager->getEnemiesSpawned()
+                  << ", Generación: " << geneticsSystem->getGeneration() << "\n";
+        debugTimer = 0;
+    }
+
+    // actualizar estados individuales de enemigos
+    updateEnemyStates(dt);
+
+    // procesar ataques de todas las torres
+    handleTowerAttacks(dt);
+
+    // verificar si es momento de preparar siguiente generacion
+    if (!gameOver) {
+        bool shouldPrepareNext = enemies.empty() && !waveManager->isWaveInProgress() && waveManager->getEnemiesSpawned() > 0;
+
+        if (shouldPrepareNext) {
+            std::cout << "=== PREPARANDO SIGUIENTE GENERACIÓN ===\n";
+            std::cout << "Enemigos muertos: " << enemiesKilled << "\n";
+
+            prepareNextGeneration(); // calcular fitness y crear nueva generacion
+
+            // actualizar panel con nuevos datos
+            updateStatsPanel();
+        } else {
+            // actualizar panel durante la oleada
+            updateStatsPanel();
+        }
+
+    } else {
+        // actualizar panel una vez mas al terminar el juego
+        updateStatsPanel();
+    }
+}
+
+
+
+// actualiza el estado de todos los enemigos activos
+void GameplayState::updateEnemyStates(float dt) {
     for (auto it = enemies.begin(); it != enemies.end();) {
         (*it)->update(dt);
 
-        // comprobar el estado del enemigo
+        // verificar estado del enemigo
         if (!(*it)->isAlive()) {
-            int id = (*it)->getId();
-            float distanceTraveled = (*it)->getTotalDistanceTraveled();
-            float timeAlive = (*it)->getTimeAlive();
+            // procesar muerte y obtener recompensas
+            processEnemyDeath(*it);
 
-            // registrar su rendimiento
-            waveManager->trackEnemyPerformance(id, false, distanceTraveled, timeAlive);
-
-            // sonido de muerte
-            game->getAudioSystem().playSound("death");
-
-            playerGold += (*it)->getGoldReward(); // ganar oro al matar
-            std::cout << "Gold + " << (*it)->getGoldReward() << " (Total: " << playerGold << ")\n";
-
-            // incrementar contador de enemigos eliminados
-            enemiesKilled++;
-
-            // eliminar el enemigo de la lista
+            // remover enemigo de la lista
             size_t index = it - enemies.begin();
             enemies.erase(index);
-            it = enemies.begin() + index;        }
-
+            it = enemies.begin() + index;
+        }
         else if ((*it)->hasReachedEnd()) {
-            gameOver = true;
+            // enemigo llego al final - terminar juego
+            processEnemyReachedEnd(*it);
             ++it;
         }
-
         else {
             ++it;
         }
     }
+}
 
-    // Hace que las torres ataquen los enemigos
-    handleTowerAttacks(dt);
 
-    // si el juego no ha terminado, comprobar si la oleada ha terminado
-    if (!gameOver) {
-        if (enemies.empty() && !waveManager->isWaveInProgress() && waveManager->getEnemiesSpawned() > 0) {
-            prepareNextGeneration();
-        }
+
+// procesa la muerte de un enemigo y actualiza estadisticas
+void GameplayState::processEnemyDeath(std::unique_ptr<Enemy>& enemy) {
+    int id = enemy->getId();
+
+    // mostrar informacion de debug sobre el enemigo muerto
+    std::cout << "=== ENEMIGO " << id << " MURIÓ ===\n";
+    std::cout << "Distancia: " << enemy->getTotalDistanceTraveled()
+              << ", Daño recibido: " << enemy->getTotalDamageReceived()
+              << ", Tiempo: " << enemy->getTimeAlive() << "\n";
+
+    // detectar si inicio una nueva oleada y reiniciar contadores
+    int currentWave = waveManager->getCurrentWave();
+    if (currentWave != currentWaveForStats) {
+        std::cout << "=== NUEVA OLEADA DETECTADA: " << currentWave << " (anterior: " << currentWaveForStats << ") ===\n";
+        enemiesKilledThisWave = 0;
+        currentWaveFitnessList.clear();
+        currentWaveForStats = currentWave;
+        statsPanel->resetForNewWave();
+        std::cout << "Panel de estadísticas reiniciado para nueva oleada\n";
     }
 
-    //Declara como el panel de estadisticas se va actualizando durante la partida
-    std::vector<float> fitnessList = geneticsSystem->getCurrentFitnessScores();
-    std::vector<int> towerLevels;
+    // registrar rendimiento en el gestor de oleadas
+    waveManager->trackEnemyDeath(id, *enemy);
 
-    const auto& cells = gameGrid->getCells();
-    for (const auto& row : cells) {
-        for (const auto& cell : row) {
-            if (cell.hasTower()) {
-                towerLevels.push_back(cell.getTower()->getLevel());
-            }
-        }
-    }
+    // reproducir sonido de muerte
+    game->getAudioSystem().playSound("death");
 
+    // otorgar recompensa de oro
+    playerGold += enemy->getGoldReward();
+    std::cout << "Gold + " << enemy->getGoldReward() << " (Total: " << playerGold << ")\n";
+
+    // actualizar contadores de enemigos eliminados
+    enemiesKilled++;
+    enemiesKilledThisWave++;
+
+    // calcular fitness del enemigo muerto para estadisticas
+    Chromosome tempChromosome;
+    tempChromosome.calculateFitness(false, enemy->getTotalDistanceTraveled(),
+                                   enemy->getTotalDamageReceived(), enemy->getTimeAlive(),
+                                   1000.0f); // usar longitud del camino actual
+
+    currentWaveFitnessList.push_back(tempChromosome.getFitness());
+
+    std::cout << "Fitness del enemigo muerto: " << tempChromosome.getFitness() << "\n";
+}
+
+
+
+// procesa cuando un enemigo llega al final y termina el juego
+void GameplayState::processEnemyReachedEnd(std::unique_ptr<Enemy>& enemy) {
+    int id = enemy->getId();
+
+    std::cout << "=== ENEMIGO " << id << " LLEGÓ AL FINAL - GAME OVER ===\n";
+    std::cout << "Estadísticas finales - Distancia: " << enemy->getTotalDistanceTraveled()
+              << ", Daño recibido: " << enemy->getTotalDamageReceived()
+              << ", Tiempo vivo: " << enemy->getTimeAlive() << "s\n";
+
+    // registrar rendimiento antes de terminar el juego
+    waveManager->trackEnemyReachedEnd(id, *enemy);
+
+    gameOver = true;
+}
+
+
+
+// actualiza la informacion mostrada en el panel de estadisticas
+void GameplayState::updateStatsPanel() {
     statsPanel->update(
-        geneticsSystem->getGenerationCount(),
-        enemiesKilled,
-        fitnessList,
-        towerLevels,
+        geneticsSystem->getGeneration(),
+        enemiesKilledThisWave,
+        currentWaveFitnessList,
         geneticsSystem->getMutationRate(),
         geneticsSystem->getMutationCount()
     );
@@ -691,58 +779,122 @@ void GameplayState::update(float dt) {
     if (gameOver) {
         statsPanel->setVisible(false);
     }
-
 }
 
 
 
-// prepara la siguiente generacion usando el sistema genetico
+// recolecta datos de rendimiento de enemigos que siguen vivos
+void GameplayState::collectEnemyPerformanceData() {
+    std::cout << "=== RECOLECTANDO DATOS DE ENEMIGOS ACTIVOS ===\n";
+
+    // actualizar informacion de enemigos que aun estan luchando
+    for (const auto& enemy : enemies) {
+        if (enemy->isAlive()) {
+            int id = enemy->getId();
+            std::cout << "Actualizando datos de enemigo activo " << id << "\n";
+
+            // registrar progreso actual de enemigos vivos
+            waveManager->trackEnemyPerformance(id, false,
+                                             enemy->getTotalDistanceTraveled(),
+                                             enemy->getTotalDamageReceived(),
+                                             enemy->getTimeAlive());
+        }
+    }
+}
+
+
+
+// genera la siguiente generacion usando algoritmo genetico
 void GameplayState::prepareNextGeneration() {
-    // obtener datos de la oleada anterior
+    std::cout << "=== INICIO prepareNextGeneration() ===\n";
+
+    // recopilar datos finales de enemigos activos
+    collectEnemyPerformanceData();
+
+    // obtener metricas de rendimiento de la oleada completa
     DynamicArray<bool> reachedEnd = waveManager->getEnemiesReachedEnd();
     DynamicArray<float> distancesTraveled = waveManager->getDistancesTraveled();
+    DynamicArray<float> damagesReceived = waveManager->getDamagesReceived();
     DynamicArray<float> timesAlive = waveManager->getTimesAlive();
 
-    // creamos un vector de ceros con el mismo tamaño
-    DynamicArray<float> damagesDealt;
-    damagesDealt.resize(reachedEnd.size());
-    for (size_t i = 0; i < reachedEnd.size(); i++) {
-        damagesDealt[i] = 0.0f;
+    std::cout << "Datos de performance recopilados:\n";
+    std::cout << "- Enemigos que llegaron al final: " << reachedEnd.size() << "\n";
+    std::cout << "- Distancias: " << distancesTraveled.size() << "\n";
+    std::cout << "- Daños recibidos: " << damagesReceived.size() << "\n";
+    std::cout << "- Tiempos vivos: " << timesAlive.size() << "\n";
+
+    // calcular estadisticas de la oleada para debug
+    if (!damagesReceived.empty()) {
+        float avgDamage = 0.0f;
+        float maxDamage = 0.0f;
+        for (float damage : damagesReceived) {
+            avgDamage += damage;
+            maxDamage = std::max(maxDamage, damage);
+        }
+        avgDamage /= damagesReceived.size();
+
+        std::cout << "Estadísticas de daño - Promedio: " << avgDamage
+                  << ", Máximo: " << maxDamage << "\n";
     }
 
-    // evaluar la población
-    geneticsSystem->evaluatePopulation(reachedEnd, distancesTraveled, damagesDealt, timesAlive);
+    std::cout << "Evaluando población con datos reales...\n";
+    // evaluar poblacion con datos reales de rendimiento
+    geneticsSystem->evaluatePopulation(reachedEnd, distancesTraveled, damagesReceived, timesAlive);
 
-    // crear la siguiente generación
+    // mostrar fitness calculados para debug
+    std::cout << "=== FITNESS DESPUÉS DE EVALUAR ===\n";
+    DynamicArray<float> fitnessScores = geneticsSystem->getCurrentFitnessScores();
+    float totalFitness = 0.0f;
+    float maxFitness = 0.0f;
+    for (size_t i = 0; i < fitnessScores.size() && i < 5; ++i) {
+        std::cout << "Cromosoma " << i << ": " << fitnessScores[i] << "\n";
+        totalFitness += fitnessScores[i];
+        maxFitness = std::max(maxFitness, fitnessScores[i]);
+    }
+
+    if (!fitnessScores.empty()) {
+        float avgFitness = totalFitness / std::min(static_cast<size_t>(5), fitnessScores.size());
+        std::cout << "Fitness promedio (top 5): " << avgFitness
+                  << ", Fitness máximo: " << maxFitness << "\n";
+    }
+
+    std::cout << "Creando siguiente generación...\n";
+    // crear nueva generacion mediante seleccion, cruzamiento y mutacion
     geneticsSystem->createNextGeneration();
 
-    // obtener cromosomas para la siguiente oleada
-    DynamicArray<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(waveManager->getEnemiesPerWave());
+    // seleccionar mejores cromosomas para la siguiente oleada
+    int nextWaveSize = waveManager->getEnemiesPerWave();
+    DynamicArray<Chromosome> nextWaveChromosomes = geneticsSystem->getChromosomesForWave(nextWaveSize);
 
-    // configurar el WaveManager con los nuevos cromosomas
+    std::cout << "Cromosomas seleccionados para oleada: " << nextWaveChromosomes.size()
+              << " (necesarios: " << nextWaveSize << ")\n";
+
+    // configurar gestor de oleadas con nuevos cromosomas
     waveManager->setWaveChromosomes(nextWaveChromosomes);
 
-    // iniciar la siguiente oleada
+    // comenzar la siguiente oleada
     waveManager->startNextWave();
+
+    std::cout << "=== FIN prepareNextGeneration() ===\n";
 }
 
 
 
-// dibuja el contenido del estado de juego en la ventana
+// dibuja todos los elementos visuales del juego en pantalla
 void GameplayState::render(sf::RenderWindow& window) {
 
-    // dibujar fondo verde
+    // dibujar fondo verde como base
     window.draw(greenBackground);
 
-    // dibujar la cuadricula
+    // dibujar cuadricula del juego
     if (gameGrid) {
         gameGrid->draw(window);
     }
 
-    // dibujar el fondo
+    // dibujar imagen de fondo decorativa
     window.draw(backgroundSprite);
 
-    // dibujar proyectiles de torres
+    // dibujar proyectiles de todas las torres
     for (const auto& row : gameGrid->getCells()) {
         for (const auto& cell : row) {
             if (cell.hasTower()) {
@@ -760,22 +912,22 @@ void GameplayState::render(sf::RenderWindow& window) {
         }
     }
 
-    // dibujar enemigos
+    // dibujar todos los enemigos activos
     for (const auto& enemy : enemies) {
         window.draw(*enemy);
     }
 
-    // dibujar botones de opciones de torres al hacer click en celda
+    // dibujar botones de seleccion de torres
     for (const auto& button : towerButtons) {
         button->draw(window);
     }
 
-    // agregar los textos de los precios de las torres
+    // dibujar precios de las torres
     for (const auto& text : towerPriceTexts) {
         window.draw(*text);
     }
 
-    // si el juego ha terminado, mostrar mensaje de Game Over
+    // mostrar pantalla de game over si es necesario
     if (gameOver) {
         auto& font = game->getFont();
         sf::Text gameOverText;
@@ -784,21 +936,21 @@ void GameplayState::render(sf::RenderWindow& window) {
         gameOverText.setFillColor(sf::Color::Red);
         gameOverText.setString("GAME OVER");
 
-        // centrar el texto
+        // centrar texto principal
         sf::FloatRect textBounds = gameOverText.getLocalBounds();
         gameOverText.setPosition(
             (window.getSize().x - textBounds.width) / 2.0f,
             window.getSize().y * 0.4f
         );
 
-        // texto de instrucción
+        // texto de instrucciones
         sf::Text instructionText;
         instructionText.setFont(font);
         instructionText.setCharacterSize(20);
         instructionText.setFillColor(sf::Color::White);
         instructionText.setString("press any key");
 
-        // centrar el texto de instrucción
+        // centrar texto de instrucciones
         textBounds = instructionText.getLocalBounds();
         instructionText.setPosition(
             (window.getSize().x - textBounds.width) / 2.0f,
@@ -809,11 +961,11 @@ void GameplayState::render(sf::RenderWindow& window) {
         window.draw(instructionText);
     }
 
-    // flashing text cuando el jugador no tiene suficiente oro
+    // mostrar advertencia de oro insuficiente con efecto parpadeante
     if (showGoldWarning) {
         float t = goldWarningClock.getElapsedTime().asSeconds();
 
-        // mostrar solo durante 2 segundos
+        // mostrar durante 2 segundos
         if (t < 2.0f) {
             // efecto de parpadeo
             if (static_cast<int>(t * 5) % 2 == 0) {
@@ -824,11 +976,11 @@ void GameplayState::render(sf::RenderWindow& window) {
         }
     }
 
-    // flashing text cuando el jugador bloqueará el camino
+    // mostrar advertencia de bloqueo de camino con efecto parpadeante
     if (showPathBlocked) {
         float t = pathBlockedClock.getElapsedTime().asSeconds();
 
-        // mostrar solo durante 2 segundos
+        // mostrar durante 2 segundos
         if (t < 2.0f) {
             // efecto de parpadeo
             if (static_cast<int>(t * 5) % 2 == 0) {
@@ -839,29 +991,31 @@ void GameplayState::render(sf::RenderWindow& window) {
         }
     }
 
-    // muestra la cantidad de oro para mejorar la torre
+    // mostrar costo de mejora de torre si es necesario
     if (showUpgradeGoldText) {
         window.draw(upgradeGoldText);
     }
 
-    // Muestra el oro en pantalla
+    // mostrar cantidad de oro actual del jugador
     sf::Text goldText;
     goldText.setFont(game->getFont());
-    goldText.setCharacterSize(20);
+    goldText.setCharacterSize(40);
     goldText.setFillColor(sf::Color(255, 215, 0));
 
     goldText.setString("GOLD: " + std::to_string(playerGold));
-    goldText.setPosition(20.f, 20.f); // esquina superior izquierda
+    goldText.setPosition(1250.f, 950.f);
 
-    window.draw(goldText);
-
-    //Dibujar el panel de estadisticas
+    // dibujar panel de estadisticas geneticas
     if (statsPanel) {
         statsPanel->draw(window);
     }
+
+    window.draw(goldText);
 }
 
-// libera recursos si es necesario cuando se sale del estado
+
+
+// libera todos los recursos al salir del estado
 void GameplayState::cleanup() {
     stopMusic();
     gameGrid.reset();
@@ -870,14 +1024,18 @@ void GameplayState::cleanup() {
     geneticsSystem.reset();
 }
 
+
+
+// procesa los ataques de todas las torres hacia enemigos en rango
 void GameplayState::handleTowerAttacks(float dt) {
-    const auto& cellGrid = gameGrid->getCells(); // get 2D vector of cells
+    const auto& cellGrid = gameGrid->getCells();
 
     for (const auto& row : cellGrid) {
         for (const auto& cell : row) {
             if (cell.hasTower()) {
                 auto tower = cell.getTower();
 
+                // actualizar proyectiles de cada tipo de torre
                 if (tower->type() == "Archer") {
                     std::dynamic_pointer_cast<Archer>(tower)->updateProjectiles(dt);
                 }
@@ -888,6 +1046,7 @@ void GameplayState::handleTowerAttacks(float dt) {
                     std::dynamic_pointer_cast<Gunner>(tower)->updateProjectiles(dt);
                 }
 
+                // buscar enemigos en rango de ataque
                 for (const auto& enemyPtr : enemies) {
                     if (enemyPtr->isAlive()) {
                         float dx = enemyPtr->getPosition().x - cell.getPosition().x;
@@ -896,7 +1055,7 @@ void GameplayState::handleTowerAttacks(float dt) {
 
                         if (distance <= tower->getRange()) {
                             tower->attack(*enemyPtr, enemies);
-                            break; // only one attack per cycle
+                            break; // solo un ataque por ciclo
                         }
                     }
                 }
@@ -905,17 +1064,20 @@ void GameplayState::handleTowerAttacks(float dt) {
     }
 }
 
+
+
+// verifica si el clic fue fuera de botones y celda seleccionada
 bool GameplayState::clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const {
     if (!selectedCellForPlacement) return false;
 
-    // Verificar si se hizo clic dentro de algún botón
+    // verificar si se hizo clic dentro de algun boton
     for (const auto& button : towerButtons) {
         if (button->getBounds().contains(mousePos)) {
             return false;
         }
     }
 
-    // Verificar si se hizo clic dentro de la celda seleccionada
+    // verificar si se hizo clic dentro de la celda seleccionada
     float cellSize = gameGrid->getCellSize();
     sf::FloatRect selectedCellBounds(
         selectedCellForPlacement->getPosition().x - cellSize / 2.f,
