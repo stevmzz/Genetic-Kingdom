@@ -41,6 +41,9 @@ private:
     bool backgroundLoaded;
     sf::RectangleShape greenBackground;
     bool musicPaused;
+    sf::Text pathBlockedText;
+    sf::Clock pathBlockedClock;
+    bool showPathBlocked = false;
 
 public:
     GameplayState();
