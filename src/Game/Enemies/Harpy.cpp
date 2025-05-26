@@ -5,15 +5,15 @@
 #include <cmath>
 
 // valores base de la harpía
-const float HARPY_BASE_HEALTH = 120.0f;              // vida media
-const float HARPY_BASE_SPEED = 90.0f;                // velocidad intermedia
-const float HARPY_ARROW_RESISTANCE = 0.2f;           // poca resistencia a flechas
-const float HARPY_MAGIC_RESISTANCE = 0.3f;           // poca resistencia a magia
+const float HARPY_BASE_HEALTH = 100.0f;              // vida media
+const float HARPY_BASE_SPEED = 80.0f;                // velocidad intermedia
+const float HARPY_ARROW_RESISTANCE = 0.3f;           // poca resistencia a flechas
+const float HARPY_MAGIC_RESISTANCE = 0.4f;           // poca resistencia a magia
 const float HARPY_ARTILLERY_RESISTANCE = 1.0f;       // inmunidad: no se puede atacar con artillería
 
 // constructor normal
 Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
-    : Enemy(HARPY_BASE_HEALTH, HARPY_BASE_SPEED, HARPY_ARROW_RESISTANCE, HARPY_MAGIC_RESISTANCE, HARPY_ARTILLERY_RESISTANCE, 15, position, path) {
+    : Enemy(HARPY_BASE_HEALTH, HARPY_BASE_SPEED, HARPY_ARROW_RESISTANCE, HARPY_MAGIC_RESISTANCE, HARPY_ARTILLERY_RESISTANCE, 30, position, path) {
 
     if (!loadTexture("assets/images/enemies/Harpy.png")) {
         std::cerr << "error al cargar imagen: harpía" << std::endl;

@@ -39,7 +39,7 @@ private:
     sf::Vector2f goalPoint;
 
 public:
-    WaveManager(const DynamicArray<sf::Vector2f>& path, Grid* grid, const sf::Vector2f& goal, float enemySpawnInterval = 1.5f);
+    WaveManager(const DynamicArray<sf::Vector2f>& path, Grid* grid, const sf::Vector2f& goal, float enemySpawnInterval = 2.0f);
 
     DynamicArray<std::unique_ptr<Enemy>> update(float dt);
     int getCurrentWave() const;

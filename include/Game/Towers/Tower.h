@@ -27,6 +27,7 @@ protected:
     int level = 1;
     const int maxLevel = 3;
     inline static sf::Font sharedFont;
+    inline static class AudioSystem* audioSystem = nullptr;
 
 public:
     Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown)
@@ -57,6 +58,10 @@ public:
 
     const sf::Font& getFont() const {
         return sharedFont;
+    }
+
+    static void setAudioSystem(AudioSystem* audio) {
+        audioSystem = audio;
     }
 };
 

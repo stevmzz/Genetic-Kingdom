@@ -21,10 +21,13 @@ public:
     void placeTower(std::shared_ptr<Tower> t);
     std::shared_ptr<Tower> getTower() const;
     bool hasTower() const;
+    void setBackgroundTexture(const sf::Texture* texture);
 
 private:
     sf::RectangleShape shape;
+    sf::RectangleShape backgroundShape;
     bool selected;
     bool pathCell;
     std::shared_ptr<Tower> tower;
+    bool hasBackgroundTexture;
 };

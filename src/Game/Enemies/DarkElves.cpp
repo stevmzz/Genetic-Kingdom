@@ -5,15 +5,15 @@
 #include <cmath>
 
 // valores base del elfo oscuro
-const float DARKELF_BASE_HEALTH = 100.0f;             // vida menor
-const float DARKELF_BASE_SPEED = 120.0f;              // muy rápido
-const float DARKELF_ARROW_RESISTANCE = 0.1f;          // débil contra flechas
+const float DARKELF_BASE_HEALTH = 80.0f;              // vida menor
+const float DARKELF_BASE_SPEED = 100.0f;              // muy rápido
+const float DARKELF_ARROW_RESISTANCE = 0.7f;          // débil contra flechas
 const float DARKELF_MAGIC_RESISTANCE = 0.8f;          // resistente a la magia
-const float DARKELF_ARTILLERY_RESISTANCE = 0.2f;      // débil contra artillería
+const float DARKELF_ARTILLERY_RESISTANCE = 0.3f;      // débil contra artillería
 
 // constructor base
 DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
-    : Enemy(DARKELF_BASE_HEALTH, DARKELF_BASE_SPEED, DARKELF_ARROW_RESISTANCE, DARKELF_MAGIC_RESISTANCE, DARKELF_ARTILLERY_RESISTANCE, 15, position, path) {
+    : Enemy(DARKELF_BASE_HEALTH, DARKELF_BASE_SPEED, DARKELF_ARROW_RESISTANCE, DARKELF_MAGIC_RESISTANCE, DARKELF_ARTILLERY_RESISTANCE, 20, position, path) {
 
     if (!loadTexture("assets/images/enemies/DarkElve.png")) {
         std::cerr << "error al cargar imagen: elfo oscuro" << std::endl;

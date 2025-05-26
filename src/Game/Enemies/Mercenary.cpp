@@ -5,15 +5,15 @@
 #include <cmath>
 
 // valores base del mercenario
-const float MERCENARY_BASE_HEALTH = 180.0f;             // vida alta
-const float MERCENARY_BASE_SPEED = 75.0f;               // velocidad media
-const float MERCENARY_ARROW_RESISTANCE = 0.6f;          // resistencia a flechas
-const float MERCENARY_MAGIC_RESISTANCE = 1.4f;          // débil a magia
-const float MERCENARY_ARTILLERY_RESISTANCE = 0.6f;      // resistencia a artillería
+const float MERCENARY_BASE_HEALTH = 140.0f;             // vida alta
+const float MERCENARY_BASE_SPEED = 65.0f;               // velocidad media
+const float MERCENARY_ARROW_RESISTANCE = 0.5f;          // resistencia a flechas
+const float MERCENARY_MAGIC_RESISTANCE = 1.2f;          // débil a magia
+const float MERCENARY_ARTILLERY_RESISTANCE = 0.5f;      // resistencia a artillería
 
 // constructor base
 Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
-    : Enemy(MERCENARY_BASE_HEALTH, MERCENARY_BASE_SPEED, MERCENARY_ARROW_RESISTANCE, MERCENARY_MAGIC_RESISTANCE, MERCENARY_ARTILLERY_RESISTANCE, 15, position, path) {
+    : Enemy(MERCENARY_BASE_HEALTH, MERCENARY_BASE_SPEED, MERCENARY_ARROW_RESISTANCE, MERCENARY_MAGIC_RESISTANCE, MERCENARY_ARTILLERY_RESISTANCE, 25, position, path) {
 
     if (!loadTexture("assets/images/enemies/mercenary.png")) {
         std::cerr << "error al cargar imagen: mercenario" << std::endl;

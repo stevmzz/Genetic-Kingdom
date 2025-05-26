@@ -22,7 +22,8 @@
 GameplayState::GameplayState()
     :   enemiesKilled(0),
         gameOver(false),
-        selectedTowerType(TowerType::Archer){
+        selectedTowerType(TowerType::Archer),
+        musicPaused(false) {
 }
 
 
@@ -41,8 +42,17 @@ void GameplayState::init() {
     // pone el cursor visible
     game->getWindow().setMouseCursorVisible(true);
 
+    // cargar sonidos del juego
+    loadGameplaySounds();
+
+    // iniciar musica
+    startGameplayMusic();
+
     // detener la musica del menu
     game->getAudioSystem().stopAllMusic();
+
+    // cargar fondo
+    loadBackgroundTexture();
 
     // inicializar la cuadricula centrada en la pantalla
     float gridX = (window.getSize().x - GRID_COLS * CELL_SIZE) / 2;
@@ -55,17 +65,31 @@ void GameplayState::init() {
     // texto que avisa al jugador si no tiene suficiente dinero
     // siempre esta ahi, solo se muestra cuando es necesario
     insufficientGoldText.setFont(game->getFont());
-    insufficientGoldText.setCharacterSize(20);
-    insufficientGoldText.setFillColor(sf::Color::Red);
+    insufficientGoldText.setCharacterSize(30);
+    insufficientGoldText.setFillColor(sf::Color::White);
     insufficientGoldText.setString("Not enough gold!");
     sf::FloatRect textBounds = insufficientGoldText.getLocalBounds();
     insufficientGoldText.setPosition(
         (game->getWindow().getSize().x - textBounds.width) / 2.f,
-        game->getWindow().getSize().y - textBounds.height - 100.f
+        game->getWindow().getSize().y - textBounds.height - 250.f
+    );
+
+    // texto que avisa al jugador si bloqueará el camino
+    pathBlockedText.setFont(game->getFont());
+    pathBlockedText.setCharacterSize(30);
+    pathBlockedText.setFillColor(sf::Color::Red);
+    pathBlockedText.setString("Cannot block enemy path!");
+    sf::FloatRect pathTextBounds = pathBlockedText.getLocalBounds();
+    pathBlockedText.setPosition(
+        (game->getWindow().getSize().x - pathTextBounds.width) / 2.f,
+        game->getWindow().getSize().y - pathTextBounds.height - 250.f
     );
 
     // font para celdas de las torres
     Tower::setSharedFont(game->getFont());
+
+    // sonido para ataces de torres
+    Tower::setAudioSystem(&game->getAudioSystem());
 
     // Font para dano encima de enemigos
     Enemy::setSharedFont(game->getFont());
@@ -89,6 +113,110 @@ void GameplayState::init() {
     // inicializar el panel de estadísticas
     statsPanel = std::make_unique<StatsPanel>(game->getFont());
 
+}
+
+
+
+
+// metodo para cargar sonidos
+void GameplayState::loadGameplaySounds() {
+
+    // sonido de muerte de enemigos
+    if (!game->getAudioSystem().loadSound("death", "assets/audio/death.wav")) {
+        std::cerr << "error: no se pudo cargar death.mp3" << std::endl;
+    }
+
+    // sonido de colocacion de torre
+    if (!game->getAudioSystem().loadSound("colocarTorre", "assets/audio/colocarTorre.wav")) {
+        std::cerr << "error: no se pudo cargar colocarTorre.mp3" << std::endl;
+    }
+
+    // sonido de upgrade de torre
+    if (!game->getAudioSystem().loadSound("upgrade", "assets/audio/upgrade.mp3")) {
+        std::cerr << "error: no se pudo cargar upgrade.mp3" << std::endl;
+    }
+
+    //sonidos de ataques de torres:
+    if (!game->getAudioSystem().loadSound("arrow", "assets/audio/flecha.mp3")) {
+        std::cerr << "error: no se pudo cargar flecha.mp3" << std::endl;
+    }
+    if (!game->getAudioSystem().loadSound("fireball", "assets/audio/fireball.mp3")) {
+        std::cerr << "error: no se pudo cargar fireball.mp3" << std::endl;
+    }
+    if (!game->getAudioSystem().loadSound("cannonball", "assets/audio/roca.mp3")) {
+        std::cerr << "error: no se pudo cargar roca.mp3" << std::endl;
+    }
+}
+
+
+
+// metodo para iniciar la musica de fondo
+void GameplayState::startGameplayMusic() {
+    std::cout << "Iniciando música de gameplay..." << std::endl;
+
+    if (!game->getAudioSystem().playMusicIfNotPlaying("assets/audio/gameplay-theme.mp3", true)) {
+        std::cerr << "error: no se pudo cargar gameplay-theme.mp3" << std::endl;
+    }
+}
+
+
+
+// pausar musica
+void GameplayState::pauseMusic() {
+    if (!musicPaused) {
+        game->getAudioSystem().stopAllMusic();
+        musicPaused = true;
+    }
+}
+
+
+
+// continuar musica
+void GameplayState::resumeMusic() {
+    if (musicPaused) {
+        startGameplayMusic();
+        musicPaused = false;
+        std::cout << "Música reanudada" << std::endl;
+    }
+}
+
+
+
+// parar musica
+void GameplayState::stopMusic() {
+    game->getAudioSystem().stopAllMusic();
+    musicPaused = false;
+    std::cout << "Música detenida" << std::endl;
+}
+
+
+
+// cargar fondo
+bool GameplayState::loadBackgroundTexture() {
+    auto& window = game->getWindow();
+    greenBackground.setSize(sf::Vector2f(window.getSize().x, window.getSize().y));
+    greenBackground.setFillColor(sf::Color(34, 139, 34)); // Verde bosque
+
+    if (!backgroundTexture.loadFromFile("assets/images/backgrounds/backgroundGame.png")) {
+        std::cerr << "error: No se pudo cargar gameplay_background.png" << std::endl;
+        backgroundLoaded = false;
+        return false;
+    }
+
+    // configurar el sprite del fondo png
+    backgroundSprite.setTexture(backgroundTexture);
+
+    // obtener tamaños
+    sf::Vector2u windowSize = window.getSize();
+    sf::Vector2u textureSize = backgroundTexture.getSize();
+
+    // escalar para cubrir toda la pantalla
+    float scaleX = static_cast<float>(windowSize.x) / textureSize.x;
+    float scaleY = static_cast<float>(windowSize.y) / textureSize.y;
+    backgroundSprite.setScale(scaleX, scaleY);
+
+    backgroundLoaded = true;
+    return true;
 }
 
 
@@ -123,10 +251,10 @@ bool GameplayState::canPlaceTowerAt(Cell* cell) {
     // temporalmente "colocar" una torre para verificar
     cell->placeTower(std::make_shared<Archer>());
 
-    // verificar que todavía existe un camino
+    // verificar que todavía existe un camino desde spawn a goal
     bool hasPath = Pathfinding::hasValidPath(gameGrid.get(), spawnPoint, goalPoint);
 
-    // verificar enemigos activos
+    // verificar que todos los enemigos activos pueden llegar al goal
     if (hasPath) {
         for (const auto& enemy : enemies) {
             if (enemy->isAlive()) {
@@ -136,6 +264,14 @@ bool GameplayState::canPlaceTowerAt(Cell* cell) {
                     break;
                 }
             }
+        }
+    }
+
+    // verificar que futuros enemigos que aparezcan tendrán camino
+    if (hasPath && waveManager->isWaveInProgress()) {
+        auto spawnPath = Pathfinding::findPath(gameGrid.get(), spawnPoint, goalPoint);
+        if (spawnPath.empty()) {
+            hasPath = false;
         }
     }
 
@@ -150,7 +286,10 @@ bool GameplayState::canPlaceTowerAt(Cell* cell) {
 void GameplayState::recalculateEnemyPaths() {
     for (auto& enemy : enemies) {
         if (enemy->isAlive()) {
-            enemy->recalculatePath(gameGrid.get(), goalPoint);
+            auto newPath = Pathfinding::findPath(gameGrid.get(), enemy->getPosition(), goalPoint);
+            if (!newPath.empty()) {
+                enemy->setPath(newPath);
+            }
         }
     }
 }
@@ -197,6 +336,7 @@ void GameplayState::handleEvents(sf::Event& event) {
         if (event.key.code == sf::Keyboard::Escape) {
             auto pauseState = std::make_shared<PauseState>();
             game->pushState(pauseState);
+            recalculateEnemyPaths();
         }
         // para pruebas: iniciar la siguiente oleada con 'N'
         else if (event.key.code == sf::Keyboard::N && !waveManager->isWaveInProgress()) {
@@ -241,24 +381,32 @@ void GameplayState::handleEvents(sf::Event& event) {
             showUpgradeGoldText = false;
 
             sf::Vector2f basePos = clickedCell->getPosition();
-            float offsetY = -50.0f;
-            sf::Vector2f size(80.f, 40.f);
+            float offsetY = -70.0f;
+            float buttonWidth = 150.f;
+            float buttonHeight = 55.f;
 
             // Botón Archer
             auto btnArcher = std::make_shared<Button>(
-                (basePos.x- 25.0f) - 140.f, basePos.y + offsetY,
-                125.f, 75.f,
+                (basePos.x- 25.0f) - 160.f, basePos.y + offsetY,
+                buttonWidth, buttonHeight,
                 game->getFont(),
-                "Archer",
+                "ARCHER",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        auto tower = std::make_shared<Archer>();
-                        if (playerGold >= tower->getCost()) {
-                            selectedCellForPlacement->placeTower(tower);
-                            playerGold -= tower->getCost();
+                        if (!canPlaceTowerAt(selectedCellForPlacement)) {
+                            showPathBlocked = true;
+                            pathBlockedClock.restart();
                         } else {
-                            showGoldWarning = true;
-                            goldWarningClock.restart();
+                            auto tower = std::make_shared<Archer>();
+                            if (playerGold >= tower->getCost()) {
+                                selectedCellForPlacement->placeTower(tower);
+                                playerGold -= tower->getCost();
+                                recalculateEnemyPaths();
+                                game->getAudioSystem().playSound("colocarTorre");
+                            } else {
+                                showGoldWarning = true;
+                                goldWarningClock.restart();
+                            }
                         }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
@@ -267,31 +415,44 @@ void GameplayState::handleEvents(sf::Event& event) {
                     }
                 }
             );
+
+            // Aplicar texturas café/madera
+            btnArcher->setTextures(
+                "assets/images/buttons/wood_button_normal.png",
+                "assets/images/buttons/wood_button_selected.png"
+            );
+
             auto priceTextArcher = std::make_shared<sf::Text>();
             priceTextArcher->setFont(game->getFont());
-            priceTextArcher->setCharacterSize(16);
-            priceTextArcher->setFillColor(sf::Color::Yellow);
+            priceTextArcher->setCharacterSize(14);
+            priceTextArcher->setFillColor(sf::Color::White);
             Archer tempArcher;
             priceTextArcher->setString(std::to_string(tempArcher.getCost()) + "g");
-            priceTextArcher->setPosition(btnArcher->getPosition().x + 40.f, btnArcher->getPosition().y + 80.f);
+            priceTextArcher->setPosition((basePos.x- 25.0f) - 160.f + buttonWidth/2 - 15.f, basePos.y + offsetY + buttonHeight + 5.f);
             towerPriceTexts.push_back(priceTextArcher);
 
             // Botón Mage
             auto btnMage = std::make_shared<Button>(
                 (basePos.x- 25.0f), basePos.y + offsetY,
-                125.f, 75.f,
+                buttonWidth, buttonHeight,
                 game->getFont(),
-                "Mage",
+                "MAGE",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        auto tower = std::make_shared<Mage>();
-                        if (playerGold >= tower->getCost()) {
-                            selectedCellForPlacement->placeTower(tower);
-                            playerGold -= tower->getCost();
-                            recalculateEnemyPaths();
+                        if (!canPlaceTowerAt(selectedCellForPlacement)) {
+                            showPathBlocked = true;
+                            pathBlockedClock.restart();
                         } else {
-                            showGoldWarning = true;
-                            goldWarningClock.restart();
+                            auto tower = std::make_shared<Mage>();
+                            if (playerGold >= tower->getCost()) {
+                                selectedCellForPlacement->placeTower(tower);
+                                playerGold -= tower->getCost();
+                                recalculateEnemyPaths();
+                                game->getAudioSystem().playSound("colocarTorre");
+                            } else {
+                                showGoldWarning = true;
+                                goldWarningClock.restart();
+                            }
                         }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
@@ -299,32 +460,45 @@ void GameplayState::handleEvents(sf::Event& event) {
                         showUpgradeGoldText = false;
                     }
                 }
+            );
+
+            // Aplicar texturas café/madera
+            btnMage->setTextures(
+                "assets/images/buttons/wood_button_normal.png",
+                "assets/images/buttons/wood_button_selected.png"
             );
 
             auto priceTextMage = std::make_shared<sf::Text>();
             priceTextMage->setFont(game->getFont());
-            priceTextMage->setCharacterSize(16);
-            priceTextMage->setFillColor(sf::Color::Yellow);
+            priceTextMage->setCharacterSize(14);
+            priceTextMage->setFillColor(sf::Color::White);
             Mage tempMage;
             priceTextMage->setString(std::to_string(tempMage.getCost()) + "g");
-            priceTextMage->setPosition(btnMage->getPosition().x + 30.f, btnMage->getPosition().y + 80.f);
+            priceTextMage->setPosition((basePos.x- 35.0f) + buttonWidth/2 - 15.f, basePos.y + offsetY + buttonHeight + 5.f);
             towerPriceTexts.push_back(priceTextMage);
 
             // Botón Gunner
             auto btnGunner = std::make_shared<Button>(
-                (basePos.x- 25.0f) + 140.f, basePos.y + offsetY,
-                125.f, 75.f,
+                (basePos.x- 25.0f) + 160.f, basePos.y + offsetY,
+                buttonWidth, buttonHeight,
                 game->getFont(),
-                "Gunner",
+                "GUNNER",
                 [this]() {
                     if (selectedCellForPlacement) {
-                        auto tower = std::make_shared<Gunner>();
-                        if (playerGold >= tower->getCost()) {
-                            selectedCellForPlacement->placeTower(tower);
-                            playerGold -= tower->getCost();
+                        if (!canPlaceTowerAt(selectedCellForPlacement)) {
+                            showPathBlocked = true;
+                            pathBlockedClock.restart();
                         } else {
-                            showGoldWarning = true;
-                            goldWarningClock.restart();
+                            auto tower = std::make_shared<Gunner>();
+                            if (playerGold >= tower->getCost()) {
+                                selectedCellForPlacement->placeTower(tower);
+                                playerGold -= tower->getCost();
+                                recalculateEnemyPaths();
+                                game->getAudioSystem().playSound("colocarTorre");
+                            } else {
+                                showGoldWarning = true;
+                                goldWarningClock.restart();
+                            }
                         }
                         selectedCellForPlacement = nullptr;
                         towerButtons.clear();
@@ -334,15 +508,20 @@ void GameplayState::handleEvents(sf::Event& event) {
                 }
             );
 
+            // Aplicar texturas café/madera
+            btnGunner->setTextures(
+                "assets/images/buttons/wood_button_normal.png",
+                "assets/images/buttons/wood_button_selected.png"
+            );
+
             auto priceTextGunner = std::make_shared<sf::Text>();
             priceTextGunner->setFont(game->getFont());
-            priceTextGunner->setCharacterSize(16);
-            priceTextGunner->setFillColor(sf::Color::Yellow);
+            priceTextGunner->setCharacterSize(14);
+            priceTextGunner->setFillColor(sf::Color::White);
             Gunner tempGunner;
             priceTextGunner->setString(std::to_string(tempGunner.getCost()) + "g");
-            priceTextGunner->setPosition(btnGunner->getPosition().x + 30.f, btnGunner->getPosition().y + 80.f);
+            priceTextGunner->setPosition((basePos.x- 30.0f) + 160.f + buttonWidth/2 - 20.f, basePos.y + offsetY + buttonHeight + 5.f);
             towerPriceTexts.push_back(priceTextGunner);
-
 
             towerButtons.push_back(btnArcher);
             towerButtons.push_back(btnMage);
@@ -359,13 +538,13 @@ void GameplayState::handleEvents(sf::Event& event) {
                 int upgradeCost = tower->getUpgradeCost();
 
                 sf::Vector2f basePos = clickedCell->getPosition();
-                sf::Vector2f btnSize(140.f, 60.f);
+                sf::Vector2f btnSize(170.f, 50.f);
 
                 auto btnUpgrade = std::make_shared<Button>(
-                    (basePos.x - btnSize.x) + 215.0f / 2.f, basePos.y - 75.f,
+                    (basePos.x - btnSize.x) + 245.0f / 2.f, basePos.y - 85.f,
                     btnSize.x, btnSize.y,
                     game->getFont(),
-                    "Upgrade",
+                    "UPGRADE",
                     [tower, this]() {
                         if (tower && tower->canUpgrade() && playerGold >= tower->getUpgradeCost()) {
                             playerGold -= tower->getUpgradeCost();
@@ -382,20 +561,27 @@ void GameplayState::handleEvents(sf::Event& event) {
                         showUpgradeGoldText = false;
                     }
                 );
+
+                // Aplicar texturas café/madera al botón de upgrade
+                btnUpgrade->setTextures(
+                    "assets/images/buttons/wood_button_normal.png",
+                    "assets/images/buttons/wood_button_selected.png"
+                );
+
                 towerButtons.push_back(btnUpgrade);
 
                 upgradeGoldText.setFont(game->getFont());
                 upgradeGoldText.setCharacterSize(16);
-                upgradeGoldText.setFillColor(sf::Color::Yellow);
+                upgradeGoldText.setFillColor(sf::Color::White);
                 upgradeGoldText.setString(std::to_string(tower->getUpgradeCost()) + "g");
 
                 // posición centrada debajo del botón
-                sf::Vector2f btnPos((basePos.x - btnSize.x) + 215.0f / 2.f, basePos.y - 75.f);
+                sf::Vector2f btnPos((basePos.x - btnSize.x) + 235.0f / 2.f, basePos.y - 85.f);
                 sf::FloatRect textBounds = upgradeGoldText.getLocalBounds();
 
                 upgradeGoldText.setPosition(
                     btnPos.x + (btnSize.x / 2.f) - (textBounds.width / 2.f), // centrar horizontalmente
-                    btnPos.y + btnSize.y + 5.f // justo debajo del botón
+                    btnPos.y + btnSize.y + 8.f // justo debajo del botón
                 );
 
                 showUpgradeGoldText = true;
@@ -409,6 +595,12 @@ void GameplayState::handleEvents(sf::Event& event) {
 
 // actualiza la logica del estado de juego
 void GameplayState::update(float dt) {
+
+    if (!musicPaused && !game->getAudioSystem().isMusicPlaying()) {
+        std::cout << "La música se detuvo inesperadamente, reiniciando..." << std::endl;
+        startGameplayMusic();
+    }
+
     // si el juego ha terminado, no hacer nada
     if (gameOver) {
         return;
@@ -439,6 +631,9 @@ void GameplayState::update(float dt) {
 
             // registrar su rendimiento
             waveManager->trackEnemyPerformance(id, false, distanceTraveled, timeAlive);
+
+            // sonido de muerte
+            game->getAudioSystem().playSound("death");
 
             playerGold += (*it)->getGoldReward(); // ganar oro al matar
             std::cout << "Gold + " << (*it)->getGoldReward() << " (Total: " << playerGold << ")\n";
@@ -535,13 +730,17 @@ void GameplayState::prepareNextGeneration() {
 
 // dibuja el contenido del estado de juego en la ventana
 void GameplayState::render(sf::RenderWindow& window) {
-    // dibujar el fondo
-    window.draw(backgroundSprite);
+
+    // dibujar fondo verde
+    window.draw(greenBackground);
 
     // dibujar la cuadricula
     if (gameGrid) {
         gameGrid->draw(window);
     }
+
+    // dibujar el fondo
+    window.draw(backgroundSprite);
 
     // dibujar proyectiles de torres
     for (const auto& row : gameGrid->getCells()) {
@@ -597,7 +796,7 @@ void GameplayState::render(sf::RenderWindow& window) {
         instructionText.setFont(font);
         instructionText.setCharacterSize(20);
         instructionText.setFillColor(sf::Color::White);
-        instructionText.setString("presione cualquier tecla");
+        instructionText.setString("press any key");
 
         // centrar el texto de instrucción
         textBounds = instructionText.getLocalBounds();
@@ -625,6 +824,21 @@ void GameplayState::render(sf::RenderWindow& window) {
         }
     }
 
+    // flashing text cuando el jugador bloqueará el camino
+    if (showPathBlocked) {
+        float t = pathBlockedClock.getElapsedTime().asSeconds();
+
+        // mostrar solo durante 2 segundos
+        if (t < 2.0f) {
+            // efecto de parpadeo
+            if (static_cast<int>(t * 5) % 2 == 0) {
+                window.draw(pathBlockedText);
+            }
+        } else {
+            showPathBlocked = false;
+        }
+    }
+
     // muestra la cantidad de oro para mejorar la torre
     if (showUpgradeGoldText) {
         window.draw(upgradeGoldText);
@@ -634,9 +848,9 @@ void GameplayState::render(sf::RenderWindow& window) {
     sf::Text goldText;
     goldText.setFont(game->getFont());
     goldText.setCharacterSize(20);
-    goldText.setFillColor(sf::Color::Yellow);
+    goldText.setFillColor(sf::Color(255, 215, 0));
 
-    goldText.setString("Gold: " + std::to_string(playerGold));
+    goldText.setString("GOLD: " + std::to_string(playerGold));
     goldText.setPosition(20.f, 20.f); // esquina superior izquierda
 
     window.draw(goldText);
@@ -649,6 +863,7 @@ void GameplayState::render(sf::RenderWindow& window) {
 
 // libera recursos si es necesario cuando se sale del estado
 void GameplayState::cleanup() {
+    stopMusic();
     gameGrid.reset();
     enemies.clear();
     waveManager.reset();

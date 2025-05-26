@@ -32,12 +32,18 @@ private:
     DynamicArray<std::shared_ptr<sf::Text>> towerPriceTexts;
     Cell* selectedCellForPlacement = nullptr;
     bool clickedOutsideButtonsAndSelectedCell(const sf::Vector2f& mousePos) const;
-    int playerGold = 100000; // oro inicial
+    int playerGold = 200; // oro inicial
     sf::Text insufficientGoldText;
     sf::Clock goldWarningClock;
     bool showGoldWarning = false;
     sf::Text upgradeGoldText;
     bool showUpgradeGoldText = false;
+    bool backgroundLoaded;
+    sf::RectangleShape greenBackground;
+    bool musicPaused;
+    sf::Text pathBlockedText;
+    sf::Clock pathBlockedClock;
+    bool showPathBlocked = false;
 
     //Variable para el panel de estadisticas
     std::unique_ptr<StatsPanel> statsPanel;
@@ -57,6 +63,12 @@ public:
     void handleTowerAttacks(float dt);
     bool canPlaceTowerAt(Cell* cell);
     void recalculateEnemyPaths();
+    bool loadBackgroundTexture();
+    void startGameplayMusic();
+    void pauseMusic();
+    void resumeMusic();
+    void stopMusic();
+    void loadGameplaySounds();
 
     enum class TowerType {
         Archer,

@@ -1,6 +1,7 @@
 #include "../include/States/PauseState.h"
 #include "../include/States/MenuStates/MenuState.h"
 #include "../include/Core/Game.h"
+#include "../include/States/GameplayState.h"
 
 
 
@@ -133,6 +134,12 @@ void PauseState::handleEvents(sf::Event& event) {
 
             // escape
             case sf::Keyboard::Escape:
+                {
+                    auto gameplayState = std::dynamic_pointer_cast<GameplayState>(game->getCurrentState());
+                    if (gameplayState) {
+                        gameplayState->resumeMusic();
+                    }
+                }
                 game->popState(); // vuelve al juego
                 game->getWindow().setMouseCursorVisible(true);
                 break;
