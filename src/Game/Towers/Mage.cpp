@@ -4,6 +4,7 @@
 
 #include "Game/Towers/Mage.h"
 #include "Game/Enemies/Enemy.h"
+#include "Core/AudioSystem.h"
 
 Mage::Mage() : Tower(
     120, // cost
@@ -33,6 +34,11 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.takeDamage(damage, "magic");
 
+        //  sonido de fireball
+        if (audioSystem) {
+            audioSystem->playSound("fireball");
+        }
+
         // Animacion de bola de fuego
         Fireball fb(fireballTexture, sprite.getPosition(), enemy.getPosition());
         activeFireballs.push_back(fb);
@@ -49,6 +55,11 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
             std::cout << "Mage fires an area explosion\n";
             float aoeRadius = 200.0f;
             float extraDamage = damage * 1.5f;
+
+            //  sonido de fireball
+            if (audioSystem) {
+                audioSystem->playSound("fireball");
+            }
 
             // Crear animación especial de bola de fuego grande
             Fireball specialFb(fireballTexture, sprite.getPosition(), enemy.getPosition());

@@ -269,7 +269,7 @@ sf::Vector2f Pathfinding::moveAlongPath(
 
 // verifica si ha llegado al final del camino
 bool Pathfinding::hasReachedEnd(size_t currentPathIndex, const DynamicArray<sf::Vector2f>& path) {
-   return currentPathIndex >= path.size() - 1;
+   return currentPathIndex >= path.size();
 }
 
 

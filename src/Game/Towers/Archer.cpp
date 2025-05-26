@@ -4,6 +4,7 @@
 
 #include "Game/Towers/Archer.h"
 #include "Game/Enemies/Enemy.h"
+#include "Core/AudioSystem.h"
 
 
 Archer::Archer() : Tower(
@@ -35,6 +36,11 @@ void Archer::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.takeDamage(damage, "arrow");
 
+        // sonido de flecha
+        if (audioSystem) {
+            audioSystem->playSound("arrow");
+        }
+
         // Crear flecha
         Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());
         activeArrows.push_back(arrow);
@@ -61,6 +67,11 @@ void Archer::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
         if (burstClock.getElapsedTime().asSeconds() >= burstInterval) {
             std::cout << "Burst shot " << (burstShotsFired + 1) << " hits for " << damage*0.8 << " damage.\n";
             enemy.takeDamage(damage*0.8, "arrow");
+
+            // sonido de flecha
+            if (audioSystem) {
+                audioSystem->playSound("arrow");
+            }
 
             // Crear flecha
             Arrow arrow(arrowTexture, sprite.getPosition(), enemy.getPosition());

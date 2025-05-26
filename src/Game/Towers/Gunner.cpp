@@ -6,6 +6,7 @@
 
 #include "Effects/Cannonball.h"
 #include "Game/Enemies/Enemy.h"
+#include "Core/AudioSystem.h"
 
 Gunner::Gunner() : Tower(
     180, // cost
@@ -33,6 +34,11 @@ void Gunner::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
     if (elapsed >= 1.0f / attackSpeed) {
         enemy.takeDamage(damage, "artillery");
 
+        // sonido de bala
+        if (audioSystem) {
+            audioSystem->playSound("cannonball");
+        }
+
         Cannonball bullet(bulletTexture, sprite.getPosition(), enemy.getPosition());
         bullet.setScale(0.02f); // más pequeño que fireball
         activeBullets.push_back(bullet);
@@ -47,6 +53,11 @@ void Gunner::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
         if (roll <= specialChance) {
             float specialDamage = damage * 2.0f;
             std::cout << "Gunner fires big damage shot causing " << specialDamage << " damage\n";
+
+            // sonido de bala
+            if (audioSystem) {
+                audioSystem->playSound("cannonball");
+            }
 
             Cannonball specialBullet(bulletTexture, sprite.getPosition(), enemy.getPosition());
             specialBullet.setScale(0.06f); // más pequeño que fireball

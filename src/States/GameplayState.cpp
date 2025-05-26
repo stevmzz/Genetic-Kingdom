@@ -84,6 +84,9 @@ void GameplayState::init() {
     // font para celdas de las torres
     Tower::setSharedFont(game->getFont());
 
+    // sonido para ataces de torres
+    Tower::setAudioSystem(&game->getAudioSystem());
+
     // Font para dano encima de enemigos
     Enemy::setSharedFont(game->getFont());
 
@@ -123,6 +126,17 @@ void GameplayState::loadGameplaySounds() {
     // sonido de upgrade de torre
     if (!game->getAudioSystem().loadSound("upgrade", "assets/audio/upgrade.mp3")) {
         std::cerr << "error: no se pudo cargar upgrade.mp3" << std::endl;
+    }
+
+    //sonidos de ataques de torres:
+    if (!game->getAudioSystem().loadSound("arrow", "assets/audio/flecha.mp3")) {
+        std::cerr << "error: no se pudo cargar flecha.mp3" << std::endl;
+    }
+    if (!game->getAudioSystem().loadSound("fireball", "assets/audio/fireball.mp3")) {
+        std::cerr << "error: no se pudo cargar fireball.mp3" << std::endl;
+    }
+    if (!game->getAudioSystem().loadSound("cannonball", "assets/audio/roca.mp3")) {
+        std::cerr << "error: no se pudo cargar roca.mp3" << std::endl;
     }
 }
 
