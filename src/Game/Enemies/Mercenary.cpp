@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base del mercenario
-const float MERCENARY_BASE_HEALTH = 140.0f;             // vida alta
-const float MERCENARY_BASE_SPEED = 65.0f;               // velocidad media
-const float MERCENARY_ARROW_RESISTANCE = 0.5f;          // resistencia a flechas
-const float MERCENARY_MAGIC_RESISTANCE = 1.2f;          // débil a magia
-const float MERCENARY_ARTILLERY_RESISTANCE = 0.5f;      // resistencia a artillería
+const float MERCENARY_BASE_HEALTH = 130.0f;             // vida alta
+const float MERCENARY_BASE_SPEED = 60.0f;               // velocidad media
+const float MERCENARY_ARROW_RESISTANCE = 0.6f;          // resistencia a flechas
+const float MERCENARY_MAGIC_RESISTANCE = 1.3f;          // débil a magia
+const float MERCENARY_ARTILLERY_RESISTANCE = 0.7f;      // resistencia a artillería
 
 // constructor base
 Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)

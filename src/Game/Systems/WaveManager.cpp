@@ -20,7 +20,7 @@ WaveManager::WaveManager(const DynamicArray<sf::Vector2f>& path, Grid* grid, con
         waveInProgress(false),
         enemiesSpawned(0),
         enemiesRemaining(0),
-        enemiesPerWave(1), // empezar con un solo enemigo
+        enemiesPerWave(5), // empezar con 5 enemigos
         pathTotalLength(0.0f),
         lastWaveMaxProgress(0.0f),
         lastWaveAvgProgress(0.0f),
@@ -331,9 +331,9 @@ void WaveManager::calculateNextWaveEnemyCount() {
     if (maxProgress > 0.8f || reachedCount > 0) {
         // enemigos muy exitosos: reducir cantidad para balancear dificultad
         if (reachedCount > enemiesPerWave * 0.3f) { // mas del 30% llego al final
-            enemiesPerWave = std::max(1, enemiesPerWave - 2);
+            enemiesPerWave = std::max(4, enemiesPerWave - 2);
         } else if (maxProgress > 0.9f) {
-            enemiesPerWave = std::max(1, enemiesPerWave - 1);
+            enemiesPerWave = std::max(3, enemiesPerWave - 1);
         }
         // si llegaron lejos pero no tanto, mantener cantidad actual
     }
@@ -367,7 +367,7 @@ void WaveManager::calculateNextWaveEnemyCount() {
     }
 
     // mantener valores dentro de rangos razonables para jugabilidad
-    enemiesPerWave = std::max(1, std::min(15, enemiesPerWave));
+    enemiesPerWave = std::max(3, std::min(15, enemiesPerWave));
 
     std::cout << "Enemigos por oleada: " << oldCount << " -> " << enemiesPerWave;
     if (enemiesPerWave != oldCount) {

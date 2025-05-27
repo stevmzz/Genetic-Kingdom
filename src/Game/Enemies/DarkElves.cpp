@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base del elfo oscuro
-const float DARKELF_BASE_HEALTH = 80.0f;              // vida menor
-const float DARKELF_BASE_SPEED = 100.0f;              // muy rápido
-const float DARKELF_ARROW_RESISTANCE = 0.7f;          // débil contra flechas
-const float DARKELF_MAGIC_RESISTANCE = 0.8f;          // resistente a la magia
-const float DARKELF_ARTILLERY_RESISTANCE = 0.3f;      // débil contra artillería
+const float DARKELF_BASE_HEALTH = 85.0f;              // vida menor
+const float DARKELF_BASE_SPEED = 110.0f;              // muy rápido
+const float DARKELF_ARROW_RESISTANCE = 1.3f;          // débil contra flechas
+const float DARKELF_MAGIC_RESISTANCE = 0.5f;          // resistente a la magia
+const float DARKELF_ARTILLERY_RESISTANCE = 1.2f;      // débil contra artillería
 
 // constructor base
 DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -68,7 +68,7 @@ void DarkElves::takeDamage(float amount, const std::string& damageType) {
     float damageMultiplier = 1.0f;
 
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance; // débil a flechas
+        damageMultiplier = arrowResistance; // débil a flechas
     } else if (damageType == "magic") {
         damageMultiplier = magicResistance; // resistente a magia
     } else if (damageType == "artillery") {

@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base de la harpía
-const float HARPY_BASE_HEALTH = 100.0f;              // vida media
-const float HARPY_BASE_SPEED = 80.0f;                // velocidad intermedia
-const float HARPY_ARROW_RESISTANCE = 0.3f;           // poca resistencia a flechas
-const float HARPY_MAGIC_RESISTANCE = 0.4f;           // poca resistencia a magia
-const float HARPY_ARTILLERY_RESISTANCE = 1.0f;       // inmunidad: no se puede atacar con artillería
+const float HARPY_BASE_HEALTH = 105.0f;              // vida media
+const float HARPY_BASE_SPEED = 75.0f;                // velocidad intermedia
+const float HARPY_ARROW_RESISTANCE = 1.0f;           // poca resistencia a flechas
+const float HARPY_MAGIC_RESISTANCE = 1.0f;           // poca resistencia a magia
+const float HARPY_ARTILLERY_RESISTANCE = 0.0f;       // inmunidad: no se puede atacar con artillería
 
 // constructor normal
 Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -65,12 +65,12 @@ void Harpy::update(float dt) {
 
 // recibir daño según tipo
 void Harpy::takeDamage(float amount, const std::string& damageType) {
-    float damageMultiplier = 0.0f;
+    float damageMultiplier = 1.0f;
 
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance;
+        damageMultiplier = arrowResistance;
     } else if (damageType == "magic") {
-        damageMultiplier = 1.0f - magicResistance;
+        damageMultiplier = magicResistance;
     } else if (damageType == "artillery") {
         damageMultiplier = 0.0f; // inmunidad a artillería
     }

@@ -115,7 +115,7 @@ void GameplayState::init() {
     }
 
     // obtener cromosomas para la primera oleada
-    DynamicArray<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(1);
+    DynamicArray<Chromosome> firstWaveChromosomes = geneticsSystem->getChromosomesForWave(5);
     waveManager->setWaveChromosomes(firstWaveChromosomes);
 
     // comenzar inmediatamente la primera oleada

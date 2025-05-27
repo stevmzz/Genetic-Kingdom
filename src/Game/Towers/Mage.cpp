@@ -7,11 +7,11 @@
 #include "Core/AudioSystem.h"
 
 Mage::Mage() : Tower(
-    150, // cost
-    45, // damage
-    200.0f, // range
-    1.2f, // attack speed
-    7.0f // special cooldown
+    120,     // cost (costo medio)
+    35,      // damage (daño medio)
+    220.0f,  // range (alcance medio)
+    1.4f,    // attack speed (velocidad media)
+    6.0f     // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Mage.png");
     sprite.setTexture(texture);
@@ -53,8 +53,10 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
         float roll = static_cast<float>(rand()) / RAND_MAX;
         if (roll <= specialChance) {
             std::cout << "Mage fires an area explosion\n";
-            float aoeRadius = 200.0f;
-            float extraDamage = damage * 1.5f;
+            float aoeRadius = 120.0f;        // Radio reducido (antes 200)
+            float primaryDamage = damage * 1.2f;  // Daño principal reducido (antes 1.5x)
+            float aoeDamage = damage * 0.6f;      // Daño en área más bajo (antes 1.2x)
+            int maxTargets = 3;              // Máximo 3 enemigos adicionales afectados
 
             //  sonido de fireball
             if (audioSystem) {
@@ -63,23 +65,28 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
 
             // Crear animación especial de bola de fuego grande
             Fireball specialFb(fireballTexture, sprite.getPosition(), enemy.getPosition());
-            specialFb.setScale(0.2f); // más grande
+            specialFb.setScale(0.15f); // Ligeramente más pequeño (antes 0.2f)
             activeFireballs.push_back(specialFb);
 
-            // daño fuerte al objetivo principal
-            enemy.takeDamage(extraDamage, "magic");
+            // Daño al objetivo principal
+            enemy.takeDamage(primaryDamage, "magic");
+            std::cout << "Primary target takes " << primaryDamage << " damage.\n";
 
-            // daño en área a enemigos cercanos
+            // Daño en área a enemigos cercanos (CON LÍMITE)
+            int targetsHit = 0;
             for (const auto& other : allEnemies) {
-                if (other.get() == &enemy || !other->isAlive()) continue;
+                if (other.get() == &enemy || !other->isAlive() || targetsHit >= maxTargets) {
+                    continue;
+                }
 
                 float dx = other->getPosition().x - enemy.getPosition().x;
                 float dy = other->getPosition().y - enemy.getPosition().y;
                 float dist = std::hypot(dx, dy);
 
                 if (dist <= aoeRadius) {
-                    std::cout << "Explosion hits nearby enemy for " << damage << " damage.\n";
-                    other->takeDamage(damage*1.2, "magic");
+                    std::cout << "Explosion hits nearby enemy for " << aoeDamage << " damage.\n";
+                    other->takeDamage(aoeDamage, "magic");
+                    targetsHit++;
                 }
             }
         }
@@ -88,16 +95,16 @@ void Mage::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allE
 }
 
 int Mage::getUpgradeCost() const {
-    return 80 + (level * 60); // Nivel 1→150, 2→225
+    return 75 + (level * 50); // Nivel 1-125, 2-175, 3-225
 }
 
 void Mage::upgrade() {
     if (canUpgrade()) {
         level++;
-        damage += 18;            // mejora moderada
-        range += 20.0f;          // rango estable
-        attackSpeed += 0.12f;    // mejora ligera en velocidad
-        specialCooldown -= 0.2f; // ataque especial más frecuente
+        damage += 15;            // mejora moderada
+        range += 25.0f;          // rango estable
+        attackSpeed += 0.15f;    // mejora ligera en velocidad
+        specialCooldown -= 0.3f; // ataque especial más frecuente
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

@@ -50,39 +50,45 @@ void Genetics::evaluatePopulation(const DynamicArray<bool> &reachedEnd, const Dy
     if (dataSize == 0) {
         std::cout << "No hay datos de performance - asignando fitness base\n";
         for (auto& chromosome : population) {
-            chromosome.calculateFitness(false, 0.0f, 0.0f, 0.0f, pathTotalLength);
+            chromosome.calculateFitness(false, pathTotalLength * 0.3f, 10.0f, 5.0f, pathTotalLength);
         }
         return;
     }
 
     std::cout << "Evaluando " << dataSize << " cromosomas con datos de performance...\n";
 
-    // evaluar cada cromosoma con sus datos de rendimiento correspondientes
-    size_t chromoIndex = 0;
-    for (size_t i = 0; i < dataSize && chromoIndex < population.size(); ++i) {
-        // usar cromosomas de forma ciclica si hay mas datos que cromosomas
-        size_t popIndex = i % population.size();
+    // evaluar cromosomas de forma cíclica si hay menos datos que cromosomas
+    for (size_t i = 0; i < population.size(); ++i) {
+        if (i < dataSize) {
+            // usar datos reales para los primeros cromosomas
+            std::cout << "Evaluando cromosoma " << i
+                      << " - reachedEnd: " << reachedEnd[i]
+                      << ", distancia: " << distancesTraveled[i]
+                      << ", daño: " << damagesDealt[i]
+                      << ", tiempo: " << timesAlive[i] << "\n";
 
-        std::cout << "Evaluando cromosoma " << popIndex
-                  << " - reachedEnd: " << reachedEnd[i]
-                  << ", distancia: " << distancesTraveled[i]
-                  << ", daño: " << damagesDealt[i]
-                  << ", tiempo: " << timesAlive[i] << "\n";
+            population[i].calculateFitness(reachedEnd[i], distancesTraveled[i],
+                                         damagesDealt[i], timesAlive[i], pathTotalLength);
+        } else {
+            // ara cromosomas sin datos, usar interpolación basada en los que sí tienen datos
+            size_t sourceIndex = i % dataSize; // Usar cromosoma existente como base
 
-        population[popIndex].calculateFitness(reachedEnd[i], distancesTraveled[i],
-                                            damagesDealt[i], timesAlive[i], pathTotalLength);
+            // aplicar variación aleatoria a los datos base para simular diversidad
+            std::uniform_real_distribution<float> variationDist(0.8f, 1.2f);
+            float variation = variationDist(randomGenerator);
 
-        std::cout << "Fitness calculado: " << population[popIndex].getFitness() << "\n";
-    }
+            float variedDistance = distancesTraveled[sourceIndex] * variation;
+            float variedDamage = damagesDealt[sourceIndex] * variation;
+            float variedTime = timesAlive[sourceIndex] * variation;
 
-    // asignar fitness por defecto a cromosomas no evaluados
-    float avgFitness = getAverageFitness();
-    for (size_t i = dataSize; i < population.size(); ++i) {
-        if (population[i].getFitness() == 0.0f) {
-            population[i].calculateFitness(false, pathTotalLength * 0.3f, 10.0f, 5.0f, pathTotalLength);
-            std::cout << "Cromosoma " << i << " evaluado con datos default, fitness: "
+            population[i].calculateFitness(reachedEnd[sourceIndex], variedDistance,
+                                         variedDamage, variedTime, pathTotalLength);
+
+            std::cout << "Cromosoma " << i << " evaluado con datos interpolados, fitness: "
                       << population[i].getFitness() << "\n";
         }
+
+        std::cout << "Fitness calculado: " << population[i].getFitness() << "\n";
     }
 
     // actualizar metrica de diversidad poblacional
@@ -272,28 +278,22 @@ DynamicArray<Chromosome> Genetics::getChromosomesForWave(int count) {
         return a.getFitness() > b.getFitness();
     });
 
-    // balancear entre elite y diversidad: 70% mejores, 30% diversos
-    int eliteCount = std::max(1, static_cast<int>(count * 0.7f));
-    int diverseCount = count - eliteCount;
-
-    // seleccionar los cromosomas con mejor fitness
-    for (int i = 0; i < eliteCount && i < sortedPopulation.size(); ++i) {
-        waveChromosomes.push_back(sortedPopulation[i]);
-    }
-
-    // agregar cromosomas diversos de la poblacion menos exitosa
-    if (diverseCount > 0 && sortedPopulation.size() > eliteCount) {
-        std::uniform_int_distribution<int> diverseDist(eliteCount, sortedPopulation.size() - 1);
-        for (int i = 0; i < diverseCount; ++i) {
-            int index = diverseDist(randomGenerator);
-            waveChromosomes.push_back(sortedPopulation[index]);
+    // asegurar que usamos todos los cromosomas solicitados
+    for (int i = 0; i < count; ++i) {
+        if (i < sortedPopulation.size()) {
+            // usar cromosomas existentes en orden de fitness
+            waveChromosomes.push_back(sortedPopulation[i]);
+        } else {
+            // si necesitamos más cromosomas de los que tenemos, usar los mejores con mutación
+            int sourceIndex = i % sortedPopulation.size();
+            Chromosome mutatedChromosome = sortedPopulation[sourceIndex];
+            mutatedChromosome.mutate(0.3f); // mayor mutación para crear diversidad
+            waveChromosomes.push_back(mutatedChromosome);
         }
     }
 
-    // completar con cromosomas aleatorios si es necesario
-    while (waveChromosomes.size() < count) {
-        waveChromosomes.push_back(Chromosome());
-    }
+    std::cout << "Cromosomas seleccionados para oleada: " << waveChromosomes.size()
+              << " (necesarios: " << count << ")\n";
 
     return waveChromosomes;
 }

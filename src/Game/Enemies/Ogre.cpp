@@ -5,10 +5,10 @@
 #include <cmath>
 
 // valores del ogro
-const float OGRE_BASE_HEALTH = 150.0f;          // vida del ogro
-const float OGRE_BASE_SPEED = 45.0f;            // velocidad baja del ogro
-const float OGRE_ARROW_RESISTANCE = 0.6f;       // recistencia a flechas
-const float OGRE_MAGIC_RESISTANCE = 1.3f;       // recistencia contra la magia
+const float OGRE_BASE_HEALTH = 160.0f;          // vida del ogro
+const float OGRE_BASE_SPEED = 40.0f;            // velocidad baja del ogro
+const float OGRE_ARROW_RESISTANCE = 0.4f;       // recistencia a flechas
+const float OGRE_MAGIC_RESISTANCE = 1.4f;       // recistencia contra la magia
 const float OGRE_ARTILLERY_RESISTANCE = 1.3f;   // recistencia contra la artillería
 
 

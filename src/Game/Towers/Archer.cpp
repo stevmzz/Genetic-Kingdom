@@ -8,11 +8,11 @@
 
 
 Archer::Archer() : Tower(
-    75, // cost
-    35, // damage
-    280.0f, // range
-    1.8f, // attack speed
-    6.0f // special cooldown
+    60,      // cost (bajo costo)
+    18,      // damage (poco daño)
+    320.0f,  // range (alto alcance)
+    2.2f,    // attack speed (velocidad alta para compensar poco daño)
+    5.0f     // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Archer.png"); // textura de torre
     sprite.setTexture(texture);
@@ -89,15 +89,15 @@ void Archer::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
 }
 
 int Archer::getUpgradeCost() const {
-    return 60 + (level * 40);
+    return 45 + (level * 30); // Nivel 1-75, 2-105, 3-135
 }
 
 void Archer::upgrade() {
     if (canUpgrade()) {
         level++;
-        damage += 12;
-        range += 25.0f;
-        attackSpeed += 0.15f;
+        damage += 8;
+        range += 40.0f;
+        attackSpeed += 0.2f;
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

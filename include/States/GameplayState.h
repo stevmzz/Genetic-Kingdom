@@ -27,7 +27,7 @@ private:
     std::unique_ptr<Genetics> geneticsSystem;
     sf::Vector2f spawnPoint;
     sf::Vector2f goalPoint;
-    int playerGold = 200;
+    int playerGold = 150;
     int enemiesKilled;
     bool gameOver;
     bool musicPaused;

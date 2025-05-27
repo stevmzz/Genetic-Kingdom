@@ -9,11 +9,11 @@
 #include "Core/AudioSystem.h"
 
 Gunner::Gunner() : Tower(
-    180, // cost
-    100, // damage
-    160.0f, // range
-    0.6f, // attack speed
-    9.0f // special cooldown
+    200,     // cost (costo alto)
+    65,      // damage (daño alto)
+    180.0f,  // range (alcance bajo pero no extremo)
+    0.8f,    // attack speed (velocidad baja)
+    8.0f     // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Gunner.png");
     sprite.setTexture(texture);
@@ -70,16 +70,16 @@ void Gunner::attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>&) {
 }
 
 int Gunner::getUpgradeCost() const {
-    return 120 + (level * 80); // Nivel 1:200, 2:300
+    return 120 + (level * 70); // Nivel 1-190, 2-260, 3-330
 }
 
 void Gunner::upgrade() {
     if (canUpgrade()) {
         level++;
-        damage += 35;            // gran aumento de daño
-        range += 12.0f;          // mejora leve en rango
-        attackSpeed += 0.08f;     // mejora mínima en cadencia
-        specialChance += 0.08f;   // aumenta probabilidad de especial
+        damage += 25;            // gran aumento de daño
+        range += 15.0f;          // mejora leve en rango
+        attackSpeed += 0.1f;     // mejora mínima en cadencia
+        specialChance += 0.06f;   // aumenta probabilidad de especial
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();
