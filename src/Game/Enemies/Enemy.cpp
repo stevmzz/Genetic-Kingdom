@@ -255,7 +255,7 @@ void Enemy::takeDamage(float amount, const std::string& damageType) {
 
     // calcular multiplicador segun resistencias del enemigo
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance;
+        damageMultiplier = arrowResistance;
     } else if (damageType == "magic") {
         damageMultiplier = magicResistance;
     } else if (damageType == "artillery") {

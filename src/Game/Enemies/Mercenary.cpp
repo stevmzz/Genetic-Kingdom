@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base del mercenario
-const float MERCENARY_BASE_HEALTH = 140.0f;             // vida alta
-const float MERCENARY_BASE_SPEED = 65.0f;               // velocidad media
-const float MERCENARY_ARROW_RESISTANCE = 0.5f;          // resistencia a flechas
-const float MERCENARY_MAGIC_RESISTANCE = 1.2f;          // débil a magia
-const float MERCENARY_ARTILLERY_RESISTANCE = 0.5f;      // resistencia a artillería
+const float MERCENARY_BASE_HEALTH = 130.0f;             // vida alta
+const float MERCENARY_BASE_SPEED = 45.0f;               // velocidad media
+const float MERCENARY_ARROW_RESISTANCE = 0.6f;          // resistencia a flechas
+const float MERCENARY_MAGIC_RESISTANCE = 1.6f;          // débil a magia
+const float MERCENARY_ARTILLERY_RESISTANCE = 0.6f;      // resistencia a artillería
 
 // constructor base
 Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -24,14 +24,14 @@ Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector
 }
 
 // constructor con cromosoma
-Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
+Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome, int waveNumber)
     : Enemy(
-        MERCENARY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
-        MERCENARY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),
-        MERCENARY_ARROW_RESISTANCE * (0.8f + (chromosome.getArrowResistance() / 2.0f) * 0.4f),
-        MERCENARY_MAGIC_RESISTANCE * (0.8f + (chromosome.getMagicResistance() / 2.0f) * 0.4f),
-        MERCENARY_ARTILLERY_RESISTANCE * (0.8f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f),
-        15, position, path) {
+    MERCENARY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f) * std::pow(1.35f, static_cast<float>(waveNumber)),
+    MERCENARY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f) * std::pow(1.05f, static_cast<float>(waveNumber)),
+    MERCENARY_ARROW_RESISTANCE * (0.9f + (chromosome.getArrowResistance() / 2.0f) * 0.2f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    MERCENARY_MAGIC_RESISTANCE * (1.1f + (chromosome.getMagicResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    MERCENARY_ARTILLERY_RESISTANCE * (1.1f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    15 + static_cast<int>(std::pow(1.35f, waveNumber)), position, path){
 
     if (!loadTexture("assets/images/enemies/Mercenary.png")) {
         std::cerr << "error al cargar imagen: Mercenario" << std::endl;
@@ -68,11 +68,11 @@ void Mercenary::takeDamage(float amount, const std::string& damageType) {
     float damageMultiplier = 1.0f;
 
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance;
+        damageMultiplier = arrowResistance;
     } else if (damageType == "magic") {
         damageMultiplier = magicResistance;
     } else if (damageType == "artillery") {
-        damageMultiplier = 1.0f - artilleryResistance;
+        damageMultiplier = artilleryResistance;
     }
 
     float finalDamage = amount * damageMultiplier;

@@ -1,7 +1,3 @@
-//
-// Created by josep on 5/21/25.
-//
-
 #ifndef TOWER_H
 #define TOWER_H
 
@@ -11,58 +7,52 @@
 #include "./DataStructures/DynamicArray.h"
 
 class Enemy; // Forward declaration
+class AudioSystem; // Forward para evitar incluir directamente
 
 class Tower {
 protected:
-    int cost; // cuanto cuesta la unidad
-    int damage; // que tanto dano hace la unidad
-    float range; // rango al que puede atacar
-    float attackSpeed; // intercalo de ataque en segundos
+    int cost;
+    int damage;
+    float range;
+    float attackSpeed;
     float specialCooldown;
     sf::Sprite sprite;
     sf::Texture texture;
-    sf::Clock attackClock; // mide el tiempo desde el último ataque
-    sf::Clock specialClock; // mide el tiempo desde el ultimo especial
-    float specialChance = 0.8f; // chance de que el especial ocurra (80%)
+    sf::Clock attackClock;
+    sf::Clock specialClock;
+    float specialChance = 0.8f;
     int level = 1;
     const int maxLevel = 3;
+
     inline static sf::Font sharedFont;
-    inline static class AudioSystem* audioSystem = nullptr;
+    inline static AudioSystem* audioSystem = nullptr;
 
 public:
-    Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown)
-        : cost(cost), damage(damage), range(range), attackSpeed(attackSpeed), specialCooldown(specialCooldown) {}
+    Tower(int cost, int damage, float range, float attackSpeed, float specialCooldown);
 
-    virtual void attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allEnemies) = 0;    virtual std::string type() const = 0;
+    virtual ~Tower() = default;
+
+    virtual void attack(Enemy& enemy, const DynamicArray<std::unique_ptr<Enemy>>& allEnemies) = 0;
+    virtual std::string type() const = 0;
+
+    virtual void setPosition(const sf::Vector2f& pos);
+    virtual const sf::Sprite& getSprite() const;
+
+    float getRange() const;
+    int getCost() const;
+    bool canUpgrade() const;
+    int getLevel() const;
+
+    virtual int getUpgradeCost() const = 0;
+    virtual void upgrade() = 0;
 
     sf::Clock upgradeFlashClock;
     bool recentlyUpgraded = false;
 
-    virtual ~Tower() = default;
+    static void setSharedFont(const sf::Font& font);
+    const sf::Font& getFont() const;
 
-    float getRange() const { return range; }
-    int getCost() const { return cost; }
-
-    virtual void setPosition(const sf::Vector2f& pos) {sprite.setPosition(pos);}
-
-    virtual const sf::Sprite& getSprite() const {return sprite;}
-
-    virtual bool canUpgrade() const { return level < maxLevel; }
-    virtual int getUpgradeCost() const = 0;
-    virtual void upgrade() = 0;
-    int getLevel() const { return level; }
-
-    static void setSharedFont(const sf::Font& font) {
-        sharedFont = font;
-    }
-
-    const sf::Font& getFont() const {
-        return sharedFont;
-    }
-
-    static void setAudioSystem(AudioSystem* audio) {
-        audioSystem = audio;
-    }
+    static void setAudioSystem(AudioSystem* audio);
 };
 
-#endif //TOWER_H
+#endif // TOWER_H

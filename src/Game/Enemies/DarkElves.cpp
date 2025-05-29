@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base del elfo oscuro
-const float DARKELF_BASE_HEALTH = 80.0f;              // vida menor
+const float DARKELF_BASE_HEALTH = 75.0f;              // vida menor
 const float DARKELF_BASE_SPEED = 100.0f;              // muy rápido
-const float DARKELF_ARROW_RESISTANCE = 0.7f;          // débil contra flechas
-const float DARKELF_MAGIC_RESISTANCE = 0.8f;          // resistente a la magia
-const float DARKELF_ARTILLERY_RESISTANCE = 0.3f;      // débil contra artillería
+const float DARKELF_ARROW_RESISTANCE = 1.3f;          // débil contra flechas
+const float DARKELF_MAGIC_RESISTANCE = 0.6f;          // resistente a la magia
+const float DARKELF_ARTILLERY_RESISTANCE = 1.3f;      // débil contra artillería
 
 // constructor base
 DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -24,14 +24,14 @@ DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector
 }
 
 // constructor con cromosoma (algoritmo genético)
-DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
+DarkElves::DarkElves(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome, int waveNumber)
     : Enemy(
-        DARKELF_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
-        DARKELF_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),
-        DARKELF_ARROW_RESISTANCE * (0.8f + (chromosome.getArrowResistance() / 2.0f) * 0.4f),
-        DARKELF_MAGIC_RESISTANCE * (0.8f + (chromosome.getMagicResistance() / 2.0f) * 0.4f),
-        DARKELF_ARTILLERY_RESISTANCE * (0.8f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f),
-        15, position, path) {
+    DARKELF_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f) * std::pow(1.35f, static_cast<float>(waveNumber)),
+    DARKELF_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f) * std::pow(1.05f, static_cast<float>(waveNumber)),
+    DARKELF_ARROW_RESISTANCE * (0.9f + (chromosome.getArrowResistance() / 2.0f) * 0.2f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    DARKELF_MAGIC_RESISTANCE * (1.1f + (chromosome.getMagicResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    DARKELF_ARTILLERY_RESISTANCE * (1.1f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    15 + static_cast<int>(std::pow(1.35f, waveNumber)), position, path) {
 
     if (!loadTexture("assets/images/enemies/DarkElve.png")) {
         std::cerr << "error al cargar imagen: elfo oscuro" << std::endl;
@@ -68,11 +68,11 @@ void DarkElves::takeDamage(float amount, const std::string& damageType) {
     float damageMultiplier = 1.0f;
 
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance; // débil a flechas
+        damageMultiplier = arrowResistance; // débil a flechas
     } else if (damageType == "magic") {
         damageMultiplier = magicResistance; // resistente a magia
     } else if (damageType == "artillery") {
-        damageMultiplier = 1.0f - artilleryResistance; // débil a artillería
+        damageMultiplier = artilleryResistance; // débil a artillería
     }
 
     float finalDamage = amount * damageMultiplier;

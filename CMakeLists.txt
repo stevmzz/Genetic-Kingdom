@@ -49,6 +49,7 @@ set(SOURCES
         src/Effects/Fireball.cpp
         include/Effects/Cannonball.h
         src/Effects/Cannonball.cpp
+        src/Game/Towers/Tower.cpp
 )
 
 # Crea el ejecutable

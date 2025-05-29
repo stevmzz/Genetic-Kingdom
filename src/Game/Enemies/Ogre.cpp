@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores del ogro
-const float OGRE_BASE_HEALTH = 150.0f;          // vida del ogro
+const float OGRE_BASE_HEALTH = 160.0f;          // vida del ogro
 const float OGRE_BASE_SPEED = 45.0f;            // velocidad baja del ogro
 const float OGRE_ARROW_RESISTANCE = 0.6f;       // recistencia a flechas
-const float OGRE_MAGIC_RESISTANCE = 1.3f;       // recistencia contra la magia
-const float OGRE_ARTILLERY_RESISTANCE = 1.3f;   // recistencia contra la artillería
+const float OGRE_MAGIC_RESISTANCE = 1.5f;       // recistencia contra la magia
+const float OGRE_ARTILLERY_RESISTANCE = 1.5f;   // recistencia contra la artillería
 
 
 
@@ -32,24 +32,14 @@ Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
 
 
 // constructor con cromosoma
-Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
+Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome, int waveNumber)
     : Enemy(
-        // ajustar la salud: entre 70%-130% de la salud base del ogro
-        OGRE_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
-
-        // ajustar la velocidad: entre 80%-120% de la velocidad base del ogro
-        OGRE_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),
-
-        // ajustar resistencia a flechas
-        OGRE_ARROW_RESISTANCE * (0.8f + (chromosome.getArrowResistance() / 2.0f) * 0.4f),
-
-        // ajustar debilidad a magia
-        OGRE_MAGIC_RESISTANCE * (0.8f + (chromosome.getMagicResistance() / 2.0f) * 0.4f),
-
-        // ajustar debilidad a artillería
-        OGRE_ARTILLERY_RESISTANCE * (0.8f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f),
-
-        15, position, path) {
+    OGRE_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f) * std::pow(1.35f, static_cast<float>(waveNumber)),
+    OGRE_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f) * std::pow(1.05f, static_cast<float>(waveNumber)),
+    OGRE_ARROW_RESISTANCE * (0.9f + (chromosome.getArrowResistance() / 2.0f) * 0.2f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    OGRE_MAGIC_RESISTANCE * (1.1f + (chromosome.getMagicResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    OGRE_ARTILLERY_RESISTANCE * (1.1f + (chromosome.getArtilleryResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    15 + static_cast<int>(std::pow(1.35f, waveNumber)), position, path) {
 
     // cargar la textura del ogro
     if (!loadTexture("assets/images/enemies/ogre.png")) {
@@ -100,7 +90,7 @@ void Ogre::takeDamage(float amount, const std::string& damageType) {
 
     // aplicar resistencias segun el tipo de dano
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance; // resistente a flechas
+        damageMultiplier = arrowResistance; // resistente a flechas
     } else if (damageType == "magic") {
         damageMultiplier = magicResistance; // debil contra magia
     } else if (damageType == "artillery") {
