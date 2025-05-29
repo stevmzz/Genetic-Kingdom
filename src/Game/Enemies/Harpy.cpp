@@ -5,11 +5,11 @@
 #include <cmath>
 
 // valores base de la harpía
-const float HARPY_BASE_HEALTH = 100.0f;              // vida media
-const float HARPY_BASE_SPEED = 80.0f;                // velocidad intermedia
-const float HARPY_ARROW_RESISTANCE = 0.3f;           // poca resistencia a flechas
-const float HARPY_MAGIC_RESISTANCE = 0.4f;           // poca resistencia a magia
-const float HARPY_ARTILLERY_RESISTANCE = 1.0f;       // inmunidad: no se puede atacar con artillería
+const float HARPY_BASE_HEALTH = 90.0f;              // vida media
+const float HARPY_BASE_SPEED = 75.0f;                // velocidad intermedia
+const float HARPY_ARROW_RESISTANCE = 1.0f;           // resistencia neutra
+const float HARPY_MAGIC_RESISTANCE = 1.0f;           // resistencia neutra
+const float HARPY_ARTILLERY_RESISTANCE = 0.0f;       // inmunidad: no se puede atacar con artillería
 
 // constructor normal
 Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -24,14 +24,14 @@ Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& pat
 }
 
 // constructor con cromosoma
-Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome)
+Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path, const Chromosome& chromosome, int waveNumber)
     : Enemy(
-        HARPY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f),
-        HARPY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f),
-        HARPY_ARROW_RESISTANCE * (0.8f + (chromosome.getArrowResistance() / 2.0f) * 0.4f),
-        HARPY_MAGIC_RESISTANCE * (0.8f + (chromosome.getMagicResistance() / 2.0f) * 0.4f),
-        HARPY_ARTILLERY_RESISTANCE, // la artillería no puede dañarla, así que no se modifica
-        15, position, path) {
+    HARPY_BASE_HEALTH * (0.7f + (chromosome.getHealth() / 300.0f) * 0.6f) * std::pow(1.35f, static_cast<float>(waveNumber)),
+    HARPY_BASE_SPEED * (0.8f + (chromosome.getSpeed() / 100.0f) * 0.4f) * std::pow(1.05f, static_cast<float>(waveNumber)),
+    HARPY_ARROW_RESISTANCE * (0.9f + (chromosome.getArrowResistance() / 2.0f) * 0.2f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    HARPY_MAGIC_RESISTANCE * (1.1f + (chromosome.getMagicResistance() / 2.0f) * 0.4f) * std::pow(1.1f, static_cast<float>(waveNumber)),
+    HARPY_ARTILLERY_RESISTANCE, // no escala, sigue inafectada por artillería
+    15 + static_cast<int>(std::pow(1.35f, waveNumber)), position, path) {
 
     if (!loadTexture("assets/images/enemies/Harpy.png")) {
         std::cerr << "error al cargar imagen: harpía" << std::endl;
@@ -68,11 +68,11 @@ void Harpy::takeDamage(float amount, const std::string& damageType) {
     float damageMultiplier = 0.0f;
 
     if (damageType == "arrow") {
-        damageMultiplier = 1.0f - arrowResistance;
+        damageMultiplier = arrowResistance;
     } else if (damageType == "magic") {
-        damageMultiplier = 1.0f - magicResistance;
+        damageMultiplier = magicResistance;
     } else if (damageType == "artillery") {
-        damageMultiplier = 0.0f; // inmunidad a artillería
+        damageMultiplier = artilleryResistance; // inmunidad a artillería
     }
 
     float finalDamage = amount * damageMultiplier;

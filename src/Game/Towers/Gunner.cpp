@@ -12,7 +12,7 @@ Gunner::Gunner() : Tower(
     180, // cost
     100, // damage
     160.0f, // range
-    0.6f, // attack speed
+    0.8f, // attack speed
     9.0f // special cooldown
     ) {
     texture.loadFromFile("assets/images/towers/Gunner.png");

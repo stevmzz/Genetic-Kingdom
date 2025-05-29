@@ -103,19 +103,19 @@ DynamicArray<std::unique_ptr<Enemy>> WaveManager::update(float dt) {
 
             switch(enemyType) {
                 case 0:
-                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome, currentWave);
                 break;
                 case 1:
-                    enemy = std::make_unique<DarkElves>(spawnPosition, enemyPath, chromosome);
+                    enemy = std::make_unique<DarkElves>(spawnPosition, enemyPath, chromosome, currentWave);
                 break;
                 case 2:
-                    enemy = std::make_unique<Harpy>(spawnPosition, enemyPath, chromosome);
+                    enemy = std::make_unique<Harpy>(spawnPosition, enemyPath, chromosome, currentWave);
                 break;
                 case 3:
-                    enemy = std::make_unique<Mercenary>(spawnPosition, enemyPath, chromosome);
+                    enemy = std::make_unique<Mercenary>(spawnPosition, enemyPath, chromosome, currentWave);
                 break;
                 default:
-                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome);
+                    enemy = std::make_unique<Ogre>(spawnPosition, enemyPath, chromosome, currentWave);
             }
 
             enemy->setId(enemiesSpawned);
