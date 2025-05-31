@@ -93,6 +93,9 @@ void GameplayState::init() {
     // configurar fuente compartida para enemigos
     Enemy::setSharedFont(game->getFont());
 
+    // configurar sistema de audio para enemigos
+    Enemy::setAudioSystem(&game->getAudioSystem());
+
     // inicializar algoritmo genetico con parametros optimizados
     geneticsSystem = std::make_unique<Genetics>(20, 0.25f, 0.85f);
 

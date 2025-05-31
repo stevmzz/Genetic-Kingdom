@@ -47,7 +47,7 @@ Ogre::Ogre(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path,
     }
 
     // ajustar el tamaño del sprite del ogro
-    sprite.setScale(0.3f, 0.3f);
+    sprite.setScale(0.4f, 0.4f);
     sprite.setRotation(0.0f);
 }
 

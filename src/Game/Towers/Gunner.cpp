@@ -25,7 +25,7 @@ Gunner::Gunner() : Tower(
     sprite.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
 
     // Escalar el sprite (ajusta el tamaño a tu celda)
-    float scaleFactor = 40.f / bounds.width; // Asumiendo que la celda mide 40x40 px
+    float scaleFactor = 60.f / bounds.width; // Asumiendo que la celda mide 40x40 px
     sprite.setScale(scaleFactor, scaleFactor);
 }
 
@@ -80,6 +80,10 @@ void Gunner::upgrade() {
         range += 12.0f;          // mejora leve en rango
         attackSpeed += 0.08f;     // mejora mínima en cadencia
         specialChance += 0.08f;   // aumenta probabilidad de especial
+
+        if (audioSystem) {
+            audioSystem->playSound("upgrade");
+        }
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

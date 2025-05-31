@@ -61,10 +61,16 @@ std::string StatsPanel::formatStats(int generation, int enemiesKilledThisWave, c
     leftColumn.push_back("Generation: " + std::to_string(generation));
     leftColumn.push_back("Death enemies: " + std::to_string(enemiesKilledThisWave));
 
-    // formatear linea de mutaciones con porcentaje
+    // calcular el porcentaje real de mutaciones
+    float realMutationPercentage = 0.0f;
+    if (generation > 0) {
+        realMutationPercentage = (static_cast<float>(mutationCount) / 20.0f) * 100.0f; // 20 = tamaño población
+    }
+
+    // formatear linea de mutaciones con porcentaje REAL
     std::ostringstream mutationLine;
     mutationLine << "Mutations: " << mutationCount << "/" << (generation > 0 ? 20 : 0)
-                 << " (" << static_cast<int>(mutationProb * 100) << "%)";
+                 << " (" << static_cast<int>(realMutationPercentage) << "%)";
     leftColumn.push_back(mutationLine.str());
 
     // preparar contenido de la columna derecha con valores de fitness

@@ -37,7 +37,7 @@ Mercenary::Mercenary(const sf::Vector2f& position, const DynamicArray<sf::Vector
         std::cerr << "error al cargar imagen: Mercenario" << std::endl;
     }
 
-    sprite.setScale(0.11f, 0.11f);
+    sprite.setScale(0.13f, 0.13f);
     sprite.setRotation(0.0f);
 }
 

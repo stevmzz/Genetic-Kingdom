@@ -13,6 +13,8 @@ struct FloatingDamageText {
     }
 };
 
+class AudioSystem;
+
 class Enemy : public sf::Drawable {
 protected:
     int id;
@@ -35,6 +37,7 @@ protected:
     sf::Clock lifeTimer;
     DynamicArray<FloatingDamageText> floatingTexts;
     static sf::Font sharedFont;
+    static AudioSystem* audioSystem;
 
 public:
     Enemy(
@@ -72,6 +75,7 @@ public:
     virtual void receiveDamage(float damage);
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     static void setSharedFont(const sf::Font& font);
+    static void setAudioSystem(AudioSystem* audio);
 
 protected:
     void updateFloatingTexts(float dt);

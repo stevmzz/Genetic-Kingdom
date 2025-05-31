@@ -49,6 +49,7 @@ bool AudioSystem::loadSound(const std::string& id, const std::string& filepath) 
 
 
 
+
 // reproduce un sonido por su identificador
 void AudioSystem::playSound(const std::string& id) {
     auto it = soundBuffers.find(id);
@@ -59,7 +60,14 @@ void AudioSystem::playSound(const std::string& id) {
 
     auto sound = std::make_unique<sf::Sound>();
     sound->setBuffer(*it->second);
-    sound->setVolume(calculateFinalSfxVolume());
+
+    // sonido de muerte mas fuerte
+    float volume = calculateFinalSfxVolume();
+    if (id == "death") {
+        volume = std::min(100.0f, volume * 1.5f); // 50% más fuerte para muerte
+    }
+
+    sound->setVolume(volume);
     sound->play();
 
     activeSounds.push_back(std::move(sound));

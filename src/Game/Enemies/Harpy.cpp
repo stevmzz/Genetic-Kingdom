@@ -37,7 +37,7 @@ Harpy::Harpy(const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& pat
         std::cerr << "error al cargar imagen: harpía" << std::endl;
     }
 
-    sprite.setScale(0.11f, 0.11f);
+    sprite.setScale(0.15f, 0.15f);
     sprite.setRotation(0.0f);
 }
 

@@ -4,9 +4,13 @@
 #include <cmath>
 #include <iostream>
 #include "Game/Towers/Tower.h"
+#include "../include/Core/AudioSystem.h"
 
 // fuente compartida para mostrar textos flotantes de daño
 sf::Font Enemy::sharedFont;
+
+// referencia al sistema de audio compartido
+AudioSystem* Enemy::audioSystem = nullptr;
 
 // constructor del enemigo con parametros individuales
 Enemy::Enemy(float health, float speed, float arrowRes, float magicRes, float artilleryRes, int goldReward, const sf::Vector2f& position, const DynamicArray<sf::Vector2f>& path)
@@ -129,7 +133,7 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
             healthBar.setFillColor(sf::Color::Red);
         }
 
-        healthBar.setPosition(position.x - 20.f, position.y - 40.f);
+        healthBar.setPosition(position.x - 20.f, position.y - 50.f);
         target.draw(healthBar, states);
 
         // dibujar borde negro alrededor de la barra de vida
@@ -138,7 +142,7 @@ void Enemy::draw(sf::RenderTarget& target, sf::RenderStates states) const {
         healthBarBorder.setFillColor(sf::Color::Transparent);
         healthBarBorder.setOutlineColor(sf::Color::Black);
         healthBarBorder.setOutlineThickness(1.f);
-        healthBarBorder.setPosition(position.x - 20.f, position.y - 40.f);
+        healthBarBorder.setPosition(position.x - 20.f, position.y - 50.f);
         target.draw(healthBarBorder, states);
     }
 
@@ -244,6 +248,12 @@ void Enemy::receiveDamage(float damage) {
     if (health <= 0.f) {
         health = 0.f;
         isActive = false;
+
+        // reproducir sonido de muerte
+        if (audioSystem) {
+            std::cout << "Reproduciendo sonido de muerte para enemigo " << id << "\n";
+            audioSystem->playSound("death");
+        }
     }
 }
 
@@ -370,4 +380,9 @@ void Enemy::updateMovement(float dt) {
 // establece la fuente que usaran todos los enemigos para textos
 void Enemy::setSharedFont(const sf::Font& font) {
     sharedFont = font;
+}
+
+// establece el sistema de audio compartido para todos los enemigos
+void Enemy::setAudioSystem(AudioSystem* audio) {
+    audioSystem = audio;
 }
