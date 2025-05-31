@@ -25,7 +25,7 @@ Archer::Archer() : Tower(
     sprite.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
 
     // Escalar el sprite (ajusta el tamaño a tu celda)
-    float scaleFactor = 40.f / bounds.width; // Asumiendo que la celda mide 40x40 px
+    float scaleFactor = 60.f / bounds.width; // Asumiendo que la celda mide 40x40 px
     sprite.setScale(scaleFactor, scaleFactor);
 
 }
@@ -98,6 +98,10 @@ void Archer::upgrade() {
         damage += 12;
         range += 25.0f;
         attackSpeed += 0.15f;
+
+        if (audioSystem) {
+            audioSystem->playSound("upgrade");
+        }
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();

@@ -23,7 +23,7 @@ Mage::Mage() : Tower(
     sprite.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
 
     // Escalar el sprite (ajusta el tamaño a tu celda)
-    float scaleFactor = 40.f / bounds.width; // Asumiendo que la celda mide 40x40 px
+    float scaleFactor = 60.f / bounds.width; // Asumiendo que la celda mide 40x40 px
     sprite.setScale(scaleFactor, scaleFactor);
 }
 
@@ -98,6 +98,10 @@ void Mage::upgrade() {
         range += 20.0f;          // rango estable
         attackSpeed += 0.12f;    // mejora ligera en velocidad
         specialCooldown -= 0.2f; // ataque especial más frecuente
+
+        if (audioSystem) {
+            audioSystem->playSound("upgrade");
+        }
 
         recentlyUpgraded = true;
         upgradeFlashClock.restart();
